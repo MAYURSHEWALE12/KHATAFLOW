@@ -296,21 +296,23 @@ export default function LedgerView() {
     const text = getWhatsAppMessage();
     const encoded = encodeURIComponent(text);
     const cleanPhone = activeFriend.phone ? activeFriend.phone.replace(/[^0-9]/g, "") : "";
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // wa.me is the universal WhatsApp link — opens the app on mobile, WhatsApp Web on desktop
+    return cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+  };
 
-    if (isMobile) {
-      // Native URI scheme — opens WhatsApp app directly on iOS & Android
-      if (cleanPhone) {
-        return `whatsapp://send?phone=${cleanPhone}&text=${encoded}`;
-      }
-      return `whatsapp://send?text=${encoded}`;
-    } else {
-      // Desktop — use wa.me web link
-      if (cleanPhone) {
-        return `https://wa.me/${cleanPhone}?text=${encoded}`;
-      }
-      return `https://wa.me/?text=${encoded}`;
-    }
+  const openWhatsApp = () => {
+    const url = getWhatsAppReminderLink();
+    // Create a real <a> element and simulate a tap — this is the ONLY reliable way
+    // to trigger WhatsApp universal links on mobile browsers (iOS Safari, Android Chrome)
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setIsShareReminderOpen(false);
   };
 
   const handlePrint = () => {
@@ -1211,17 +1213,7 @@ export default function LedgerView() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const url = getWhatsAppReminderLink();
-                  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                  if (isMobile) {
-                    // Use location.href so whatsapp:// scheme fires via the browser
-                    window.location.href = url;
-                  } else {
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }
-                  setIsShareReminderOpen(false);
-                }}
+                onClick={openWhatsApp}
                 className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all"
               >
                 <Send size={14} />
