@@ -10,7 +10,6 @@ import LedgerView from "./components/LedgerView";
 export default function App() {
   const { currentUser, isLoading, loadUserData, logout } = useKhataStore();
   const [initializing, setInitializing] = useState(true);
-  const [forceRender, setForceRender] = useState(false);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -61,13 +60,12 @@ export default function App() {
     if (initializing || isLoading) {
       const timer = setTimeout(() => {
         setInitializing(false);
-        setForceRender(true);
       }, 10000);
       return () => clearTimeout(timer);
     }
   }, [initializing, isLoading]);
 
-  const showLoading = (initializing || isLoading) && !currentUser && !forceRender;
+  const showLoading = initializing;
   if (showLoading) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
