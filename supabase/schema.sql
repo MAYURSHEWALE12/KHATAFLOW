@@ -1,8 +1,9 @@
 -- KHATAFLOW PostgreSQL Schema
 
 -- 1. Users table (mirrors and expands auth.users)
+-- Removed foreign key reference to auth.users to support guest users (invited friends)
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     avatar_url TEXT,
@@ -10,6 +11,9 @@ CREATE TABLE IF NOT EXISTS public.users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Case-insensitive unique index to prevent duplicate emails
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON public.users (LOWER(email));
 
 -- Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -86,34 +90,50 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- ==============================================================
 
 -- Trigger to automatically create a profile in public.users on signup
+-- Bulletproof migration handles the case where guest + real user rows both exist for the same email.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    v_guest_id UUID;
 BEGIN
+    -- Find guest row (provider = 'invited') with matching email (case-insensitive)
+    SELECT id INTO v_guest_id FROM public.users
+    WHERE LOWER(email) = LOWER(NEW.email) AND provider = 'invited'
+    ORDER BY created_at ASC LIMIT 1;
+
+    -- If guest row exists and is different from the real user ID, migrate it
+    IF v_guest_id IS NOT NULL AND v_guest_id <> NEW.id THEN
+        UPDATE public.friend_relationships SET linked_user_id = NEW.id WHERE linked_user_id = v_guest_id;
+        UPDATE public.ledgers SET user_a = NEW.id WHERE user_a = v_guest_id;
+        UPDATE public.ledgers SET user_b = NEW.id WHERE user_b = v_guest_id;
+        UPDATE public.transactions SET created_by = NEW.id WHERE created_by = v_guest_id;
+        UPDATE public.notifications SET user_id = NEW.id WHERE user_id = v_guest_id;
+        DELETE FROM public.users WHERE id = v_guest_id;
+    END IF;
+
+    -- Upsert the real user row
     INSERT INTO public.users (id, name, email, avatar_url, provider)
     VALUES (
         NEW.id,
-        COALESCE(
-            NEW.raw_user_meta_data ->> 'name',
-            NEW.raw_user_meta_data ->> 'full_name',
-            split_part(NEW.email, '@', 1)
-        ),
+        COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
         NEW.email,
-        COALESCE(
-            NEW.raw_user_meta_data ->> 'avatar_url',
-            NEW.raw_user_meta_data ->> 'avatarUrl',
-            NULL
-        ),
+        COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', NULL),
         COALESCE(NEW.app_metadata ->> 'provider', 'email')
-    );
-    
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), users.name),
+        email = NEW.email,
+        avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', users.avatar_url),
+        provider = COALESCE(NEW.app_metadata ->> 'provider', 'email');
+
     UPDATE public.friend_relationships
     SET linked_user_id = NEW.id
-    WHERE friend_email = NEW.email
+    WHERE LOWER(friend_email) = LOWER(NEW.email)
       AND linked_user_id IS NULL;
-    
+
     RETURN NEW;
 EXCEPTION
     WHEN OTHERS THEN
@@ -133,21 +153,33 @@ CREATE OR REPLACE FUNCTION public.handle_friend_relationship_insert()
 RETURNS TRIGGER AS $$
 DECLARE
     found_user_id UUID;
+    ua UUID;
+    ub UUID;
 BEGIN
-    SELECT id INTO found_user_id FROM public.users WHERE email = NEW.friend_email;
-    IF found_user_id IS NOT NULL THEN
-        NEW.linked_user_id := found_user_id;
-        
-        -- Auto-create a shared ledger between owner_id and linked_user_id if it doesn't exist
-        DECLARE
-            ua UUID := LEAST(NEW.owner_id, found_user_id);
-            ub UUID := GREATEST(NEW.owner_id, found_user_id);
-        BEGIN
-            INSERT INTO public.ledgers (user_a, user_b, balance)
-            VALUES (ua, ub, 0.00)
-            ON CONFLICT (user_a, user_b) DO NOTHING;
-        END;
+    -- If linked_user_id is already set, skip
+    IF NEW.linked_user_id IS NOT NULL THEN
+        RETURN NEW;
     END IF;
+
+    -- Case-insensitive lookup
+    SELECT id INTO found_user_id FROM public.users WHERE LOWER(email) = LOWER(NEW.friend_email);
+
+    IF found_user_id IS NULL THEN
+        -- Friend has no account yet: create a guest user row (using lower-cased email)
+        found_user_id := gen_random_uuid();
+        INSERT INTO public.users (id, name, email, avatar_url, provider)
+        VALUES (found_user_id, NEW.friend_name, LOWER(NEW.friend_email), NULL, 'invited');
+    END IF;
+
+    NEW.linked_user_id := found_user_id;
+
+    ua := LEAST(NEW.owner_id, found_user_id);
+    ub := GREATEST(NEW.owner_id, found_user_id);
+
+    INSERT INTO public.ledgers (user_a, user_b, balance)
+    VALUES (ua, ub, 0.00)
+    ON CONFLICT (user_a, user_b) DO NOTHING;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -371,6 +403,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- RPC: Ensure a user profile exists in public.users (called from frontend after signup)
+-- Bulletproof migration handles guest to real user conversion seamlessly with case-insensitivity.
 CREATE OR REPLACE FUNCTION public.ensure_user_profile(
     p_user_id UUID,
     p_name TEXT,
@@ -378,12 +411,35 @@ CREATE OR REPLACE FUNCTION public.ensure_user_profile(
     p_avatar_url TEXT DEFAULT NULL,
     p_provider TEXT DEFAULT 'email'
 )
-RETURNS void AS $$
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_guest_id UUID;
 BEGIN
+    -- Find guest row (provider = 'invited') with matching email (case-insensitive)
+    SELECT id INTO v_guest_id FROM public.users
+    WHERE LOWER(email) = LOWER(p_email) AND provider = 'invited'
+    ORDER BY created_at ASC LIMIT 1;
+
+    -- If guest row exists and is different from the real user ID, migrate it
+    IF v_guest_id IS NOT NULL AND v_guest_id <> p_user_id THEN
+        UPDATE public.friend_relationships SET linked_user_id = p_user_id WHERE linked_user_id = v_guest_id;
+        UPDATE public.ledgers SET user_a = p_user_id WHERE user_a = v_guest_id;
+        UPDATE public.ledgers SET user_b = p_user_id WHERE user_b = v_guest_id;
+        UPDATE public.transactions SET created_by = p_user_id WHERE created_by = v_guest_id;
+        UPDATE public.notifications SET user_id = p_user_id WHERE user_id = v_guest_id;
+        DELETE FROM public.users WHERE id = v_guest_id;
+    END IF;
+
+    -- Upsert the real user row
     INSERT INTO public.users (id, name, email, avatar_url, provider)
     VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider)
     ON CONFLICT (id) DO UPDATE SET
         name = COALESCE(NULLIF(p_name, ''), users.name),
-        avatar_url = COALESCE(p_avatar_url, users.avatar_url);
+        email = p_email,
+        avatar_url = COALESCE(p_avatar_url, users.avatar_url),
+        provider = p_provider;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
