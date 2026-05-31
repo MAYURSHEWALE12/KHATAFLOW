@@ -129,9 +129,10 @@ export default function LedgerView() {
   };
 
   // Filter Friends inside Sidebar list
+  // Mutually show both outbound and inbound friend relationships
   const filteredFriends = friends.filter(
     (f) =>
-      f.ownerId === currentUser.id &&
+      (f.ownerId === currentUser.id || f.linkedUserId === currentUser.id) &&
       (f.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
       f.email.toLowerCase().includes(sidebarSearch.toLowerCase()))
   );
