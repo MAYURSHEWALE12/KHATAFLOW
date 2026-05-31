@@ -11,6 +11,7 @@ export default function App() {
   const [view, setView] = useState<"landing" | "login" | "dashboard" | "ledger">("landing");
   const [selectedLedgerId, setSelectedLedgerId] = useState<string>("");
   const [initializing, setInitializing] = useState(true);
+  const [forceRender, setForceRender] = useState(false);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -21,13 +22,15 @@ export default function App() {
           loadUserData(session.user.id);
         }
         setInitializing(false);
+      }).catch(() => {
+        setInitializing(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session?.user && !loadedRef.current) {
           loadedRef.current = true;
           loadUserData(session.user.id);
-        } else if (!session?.user) {
+        } else if (event === "SIGNED_OUT") {
           loadedRef.current = false;
           logout();
         }
@@ -51,7 +54,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (initializing || isLoading) {
+      const timer = setTimeout(() => {
+        setInitializing(false);
+        setForceRender(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [initializing, isLoading]);
+
+  useEffect(() => {
     if (!initializing && !isLoading) {
+      setForceRender(false);
       if (currentUser) {
         setView("dashboard");
       } else {
@@ -60,7 +74,8 @@ export default function App() {
     }
   }, [currentUser, initializing, isLoading]);
 
-  if (initializing || isLoading) {
+  const showLoading = (initializing || isLoading) && !forceRender;
+  if (showLoading) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />

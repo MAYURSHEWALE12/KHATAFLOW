@@ -244,18 +244,19 @@ export const useKhataStore = create<KhataState>((set, get) => {
     },
 
     logout: async () => {
-      if (isSupabaseConfigured && supabase) {
-        await supabase.auth.signOut();
-      }
       set({
         currentUser: null,
         friends: [],
         ledgers: [],
         transactions: [],
         notifications: [],
+        isLoading: false,
       });
       if (isClient) {
         localStorage.removeItem("khata_user");
+      }
+      if (isSupabaseConfigured && supabase) {
+        supabase.auth.signOut().catch(() => {});
       }
     },
 
