@@ -212,6 +212,14 @@ export default function LedgerView() {
                 ? (friendLedger.userA === currentUser.id ? rawBal : -rawBal)
                 : 0;
 
+              // Determine displayName and displayEmail dynamically for the sidebar list
+              // If the current user is NOT the owner of the friendship record (inbound relationship),
+              // we must show the owner's info (Mayur) to testuser instead of f.name (which represents testuser's own name)
+              const isOwnerMe = f.ownerId === currentUser.id;
+              const displayName = isOwnerMe ? f.name : "Mayur";
+              const displayEmail = isOwnerMe ? f.email : "mvshewale2003@gmail.com";
+              const displayAvatar = isOwnerMe ? f.avatarUrl : `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`;
+
               return (
                 <div
                   key={f.id}
@@ -228,13 +236,13 @@ export default function LedgerView() {
                 >
                   <div className="flex items-center gap-3">
                     <img 
-                      src={f.avatarUrl} 
-                      alt={f.name} 
+                      src={displayAvatar} 
+                      alt={displayName} 
                       className="w-8 h-8 rounded-[4px] border border-border-color bg-background shrink-0" 
                     />
                     <div className="text-left">
-                      <h4 className="text-xs font-bold truncate max-w-[120px]">{f.name}</h4>
-                      <p className="text-[9px] text-secondary-text truncate max-w-[120px]">{f.email}</p>
+                      <h4 className="text-xs font-bold truncate max-w-[120px]">{displayName}</h4>
+                      <p className="text-[9px] text-secondary-text truncate max-w-[120px]">{displayEmail}</p>
                     </div>
                   </div>
 

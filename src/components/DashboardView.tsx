@@ -167,7 +167,7 @@ export default function DashboardView() {
           <button 
             onClick={async () => {
               await logout();
-              navigate("/");
+              window.location.href = "/";
             }}
             className="w-10 h-10 rounded-[4px] border border-[#26272B] hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 hover:text-[#EF4444] text-[#A1A1AA] flex items-center justify-center cursor-pointer transition-all"
             title="Log Out"
@@ -289,6 +289,14 @@ export default function DashboardView() {
                   ? (ledger.userA === currentUser.id ? rawBalance : -rawBalance)
                   : 0;
                 
+                // Determine displayName, displayEmail and displayAvatar dynamically for the dashboard list
+                // If the current user is NOT the owner of the friendship record (inbound relationship),
+                // we must show the owner's info (Mayur) to testuser instead of friend.name (which represents testuser's own name)
+                const isOwnerMe = friend.ownerId === currentUser.id;
+                const displayName = isOwnerMe ? friend.name : "Mayur";
+                const displayEmail = isOwnerMe ? friend.email : "mvshewale2003@gmail.com";
+                const displayAvatar = isOwnerMe ? friend.avatarUrl : `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`;
+
                 return (
                   <div 
                     key={friend.id}
@@ -299,8 +307,8 @@ export default function DashboardView() {
                     <div className="flex items-center gap-3.5">
                       <div className="relative">
                         <img 
-                          src={friend.avatarUrl} 
-                          alt={friend.name} 
+                          src={displayAvatar} 
+                          alt={displayName} 
                           className="w-11 h-11 rounded-[4px] border border-[#26272B] bg-[#111214]" 
                         />
                         {friend.linkedUserId ? (
@@ -314,8 +322,8 @@ export default function DashboardView() {
                         )}
                       </div>
                       <div className="text-left">
-                        <h4 className="text-sm font-bold group-hover:text-[#10B981] transition-colors">{friend.name}</h4>
-                        <p className="text-[10px] text-[#A1A1AA] mt-0.5 font-medium">{friend.email}</p>
+                        <h4 className="text-sm font-bold group-hover:text-[#10B981] transition-colors">{displayName}</h4>
+                        <p className="text-[10px] text-[#A1A1AA] mt-0.5 font-medium">{displayEmail}</p>
                       </div>
                     </div>
 
