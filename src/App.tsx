@@ -13,6 +13,7 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [forceRender, setForceRender] = useState(false);
   const loadedRef = useRef(false);
+  const autoNavDone = useRef(false);
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
@@ -64,13 +65,10 @@ export default function App() {
   }, [initializing, isLoading]);
 
   useEffect(() => {
-    if (!initializing && !isLoading) {
+    if (!initializing && !isLoading && !autoNavDone.current) {
+      autoNavDone.current = true;
       setForceRender(false);
-      if (currentUser) {
-        setView("dashboard");
-      } else {
-        setView("landing");
-      }
+      setView(currentUser ? "dashboard" : "landing");
     }
   }, [currentUser, initializing, isLoading]);
 
