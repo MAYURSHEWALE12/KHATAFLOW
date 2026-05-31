@@ -1,16 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useKhataStore, type Friend, type Ledger } from "../store/useKhataStore";
 import { 
   Plus, Search, LogOut, Bell, 
   ArrowUpRight, ArrowDownLeft, Users, ShieldAlert, Sparkles, X, ChevronRight, UserPlus, Sun, Moon
 } from "lucide-react";
 
-interface DashboardViewProps {
-  onSelectFriendLedger: (ledgerId: string) => void;
-  onLogout: () => void;
-}
-
-export default function DashboardView({ onSelectFriendLedger, onLogout }: DashboardViewProps) {
+export default function DashboardView() {
+  const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, notifications, 
     logout, addFriend, markNotificationsRead, theme, toggleTheme
@@ -69,13 +66,13 @@ export default function DashboardView({ onSelectFriendLedger, onLogout }: Dashbo
   const handleFriendClick = async (friend: Friend) => {
     const ledger = getFriendLedger(friend);
     if (ledger) {
-      onSelectFriendLedger(ledger.id);
+      navigate("/ledger/" + ledger.id);
       return;
     }
     try {
       const newLedgerId = await useKhataStore.getState().ensureFriendLedger(friend.id);
       if (newLedgerId) {
-        onSelectFriendLedger(newLedgerId);
+        navigate("/ledger/" + newLedgerId);
       }
     } catch {}
   };
@@ -169,7 +166,7 @@ export default function DashboardView({ onSelectFriendLedger, onLogout }: Dashbo
           <button 
             onClick={() => {
               logout();
-              onLogout();
+              navigate("/");
             }}
             className="w-10 h-10 rounded-[4px] border border-[#26272B] hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 hover:text-[#EF4444] text-[#A1A1AA] flex items-center justify-center cursor-pointer transition-all"
             title="Log Out"

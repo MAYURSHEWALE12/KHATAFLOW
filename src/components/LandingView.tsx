@@ -1,13 +1,11 @@
 import { 
   Sparkles, Share2, FileText, ArrowRight, ShieldCheck, Zap, HeartHandshake, ChevronRight, Sun, Moon
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useKhataStore } from "../store/useKhataStore";
 
-interface LandingViewProps {
-  onStart: () => void;
-}
-
-export default function LandingView({ onStart }: LandingViewProps) {
+export default function LandingView() {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useKhataStore();
 
   return (
@@ -62,7 +60,7 @@ export default function LandingView({ onStart }: LandingViewProps) {
 
           {/* CTA Launch button */}
           <button 
-            onClick={onStart}
+            onClick={() => navigate("/login")}
             className="bg-card-bg hover:bg-border-color border border-border-color text-foreground px-3.5 py-1.5 rounded-[4px] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
           >
             <span>Enter Workspace</span>
@@ -98,7 +96,7 @@ export default function LandingView({ onStart }: LandingViewProps) {
           {/* CTA Button Actions (Matches Reference Image) */}
           <div className="flex flex-row items-center gap-3 w-full sm:w-auto">
             <button 
-              onClick={onStart}
+              onClick={() => navigate("/login")}
               className="bg-accent-text hover:bg-accent-text/90 text-background font-extrabold px-6 py-3 rounded-[4px] text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md"
             >
               <span>Enter Dashboard</span>
@@ -106,7 +104,7 @@ export default function LandingView({ onStart }: LandingViewProps) {
             </button>
             
             <button 
-              onClick={onStart}
+              onClick={() => navigate("/login")}
               className="bg-sidebar hover:bg-card-bg border border-border-color text-foreground font-bold px-6 py-3 rounded-[4px] text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               <span>Explore Workspace Guest</span>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useKhataStore } from "./store/useKhataStore";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import LandingView from "./components/LandingView";
@@ -8,12 +9,9 @@ import LedgerView from "./components/LedgerView";
 
 export default function App() {
   const { currentUser, isLoading, loadUserData, logout } = useKhataStore();
-  const [view, setView] = useState<"landing" | "login" | "dashboard" | "ledger">("landing");
-  const [selectedLedgerId, setSelectedLedgerId] = useState<string>("");
   const [initializing, setInitializing] = useState(true);
   const [forceRender, setForceRender] = useState(false);
   const loadedRef = useRef(false);
-  const autoNavDone = useRef(false);
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
@@ -64,14 +62,6 @@ export default function App() {
     }
   }, [initializing, isLoading]);
 
-  useEffect(() => {
-    if (!initializing && !isLoading && !autoNavDone.current) {
-      autoNavDone.current = true;
-      setForceRender(false);
-      setView(currentUser ? "dashboard" : "landing");
-    }
-  }, [currentUser, initializing, isLoading]);
-
   const showLoading = (initializing || isLoading) && !forceRender;
   if (showLoading) {
     return (
@@ -81,30 +71,13 @@ export default function App() {
     );
   }
 
-  switch (view) {
-    case "landing":
-      return <LandingView onStart={() => setView("login")} />;
-    case "login":
-      return <LoginView onSuccess={() => setView("dashboard")} />;
-    case "dashboard":
-      return (
-        <DashboardView
-          onSelectFriendLedger={(ledgerId) => {
-            setSelectedLedgerId(ledgerId);
-            setView("ledger");
-          }}
-          onLogout={() => setView("landing")}
-        />
-      );
-    case "ledger":
-      return (
-        <LedgerView
-          ledgerId={selectedLedgerId}
-          onSelectLedgerId={(id) => setSelectedLedgerId(id)}
-          onBackToDashboard={() => setView("dashboard")}
-        />
-      );
-    default:
-      return <LandingView onStart={() => setView("login")} />;
-  }
+  return (
+    <Routes>
+      <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <LandingView />} />
+      <Route path="/login" element={currentUser ? <Navigate to="/dashboard" /> : <LoginView />} />
+      <Route path="/dashboard" element={currentUser ? <DashboardView /> : <Navigate to="/login" />} />
+      <Route path="/ledger/:ledgerId" element={currentUser ? <LedgerView /> : <Navigate to="/login" />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 }

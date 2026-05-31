@@ -1,17 +1,14 @@
 import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useKhataStore, type Transaction, type Friend } from "../store/useKhataStore";
 import { 
   ArrowLeft, Plus, FileText, Send, Share2, 
   Trash2, Sparkles, Check, X, ShieldAlert, TrendingUp, Sun, Moon, Search
 } from "lucide-react";
 
-interface LedgerViewProps {
-  ledgerId: string;
-  onSelectLedgerId: (ledgerId: string) => void;
-  onBackToDashboard: () => void;
-}
-
-export default function LedgerView({ ledgerId, onSelectLedgerId, onBackToDashboard }: LedgerViewProps) {
+export default function LedgerView() {
+  const { ledgerId } = useParams<{ ledgerId: string }>();
+  const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, transactions, 
     addTransaction, deleteTransaction, settleUp, theme, toggleTheme 
@@ -36,7 +33,7 @@ export default function LedgerView({ ledgerId, onSelectLedgerId, onBackToDashboa
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <p className="text-sm text-secondary-text mb-4">Ledger not found or invalid URL.</p>
         <button 
-          onClick={onBackToDashboard}
+          onClick={() => navigate("/dashboard")}
           className="px-4 py-2 border border-border-color rounded-[4px] text-xs hover:bg-card-bg transition-all cursor-pointer bg-sidebar"
         >
           Return to Dashboard
@@ -204,7 +201,7 @@ export default function LedgerView({ ledgerId, onSelectLedgerId, onBackToDashboa
                   key={f.id}
                   onClick={() => {
                     if (friendLedger) {
-                      onSelectLedgerId(friendLedger.id);
+                      navigate("/ledger/" + friendLedger.id);
                     }
                   }}
                   className={`p-3 flex items-center justify-between cursor-pointer transition-all hover:bg-card-bg ${
@@ -249,7 +246,7 @@ export default function LedgerView({ ledgerId, onSelectLedgerId, onBackToDashboa
           <div className="flex items-center gap-3">
             {/* Back to dashboard button (Useful on Mobile screen size) */}
             <button 
-              onClick={onBackToDashboard}
+              onClick={() => navigate("/dashboard")}
               className="w-8 h-8 rounded-[4px] hover:bg-card-bg border border-border-color flex items-center justify-center text-secondary-text hover:text-foreground transition-all cursor-pointer bg-sidebar"
               title="Return to Dashboard"
             >

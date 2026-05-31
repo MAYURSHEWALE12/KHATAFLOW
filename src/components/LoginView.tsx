@@ -1,13 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import { useKhataStore } from "../store/useKhataStore";
 import { ArrowRight, Lock, Mail, ShieldAlert, Sparkles, TrendingUp, User, Eye, EyeOff, Sun, Moon } from "lucide-react";
 
-interface LoginViewProps {
-  onSuccess: () => void;
-}
-
-export default function LoginView({ onSuccess }: LoginViewProps) {
+export default function LoginView() {
+  const navigate = useNavigate();
   const { signIn, signUp, theme, toggleTheme } = useKhataStore();
 
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
@@ -62,7 +60,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
         setSuccessMessage("Account created successfully! Welcome to KhataFlow.");
         setTimeout(() => {
           setIsLoading(false);
-          onSuccess();
+          navigate("/dashboard");
         }, 500);
       }
     } else {
@@ -74,7 +72,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
         setSuccessMessage("Signed in successfully!");
         setTimeout(() => {
           setIsLoading(false);
-          onSuccess();
+          navigate("/dashboard");
         }, 500);
       }
     }
