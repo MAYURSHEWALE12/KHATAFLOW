@@ -535,31 +535,39 @@ export default function LedgerView() {
                               </span>
                             </div>
 
-                            <span className="block text-[8px] text-neutral-500 mt-2 font-semibold">
+                            <div className="flex items-center justify-between gap-4 mt-3 border-t border-border-color/30 pt-2 print:hidden">
+                              <span className="block text-[8px] text-neutral-500 font-semibold">
+                                Recorded by {isCreatorMe ? "You" : activeFriend.name}
+                              </span>
+
+                              {isCreatorMe && (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    onClick={() => handleEditClick(tx)}
+                                    className="w-5.5 h-5.5 rounded-[4px] bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-[#0A0A0B] border border-[#10B981]/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
+                                    title="Edit entry"
+                                  >
+                                    <Pencil size={10} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm("Are you sure you want to delete this entry? Balance will automatically recalculate.")) {
+                                        deleteTransaction(tx.id);
+                                      }
+                                    }}
+                                    className="w-5.5 h-5.5 rounded-[4px] bg-error-text/10 hover:bg-[#EF4444] text-error-text hover:text-white border border-error-text/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
+                                    title="Delete entry"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Print-only fallback for metadata */}
+                            <span className="hidden print:block text-[8px] text-neutral-500 mt-2 font-semibold">
                               Recorded by {isCreatorMe ? "You" : activeFriend.name}
                             </span>
-
-                             {isCreatorMe && (
-                              <button
-                                onClick={() => handleEditClick(tx)}
-                                className="absolute -top-2.5 -right-9 w-6 h-6 rounded-full bg-[#10B981]/15 hover:bg-[#10B981] border border-[#10B981]/30 hover:border-transparent text-[#10B981] hover:text-[#0A0A0B] flex items-center justify-center cursor-pointer transition-all opacity-0 group-hover:opacity-100 shrink-0 print:hidden"
-                                title="Edit entry"
-                              >
-                                <Pencil size={10} />
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => {
-                                if (confirm("Are you sure you want to delete this entry? Balance will automatically recalculate.")) {
-                                  deleteTransaction(tx.id);
-                                }
-                              }}
-                              className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-[#EF4444]/15 hover:bg-[#EF4444] border border-[#EF4444]/30 hover:border-transparent text-[#EF4444] hover:text-white flex items-center justify-center cursor-pointer transition-all opacity-0 group-hover:opacity-100 shrink-0 print:hidden"
-                              title="Delete entry"
-                            >
-                              <Trash2 size={11} />
-                            </button>
                           </div>
                         )}
 
