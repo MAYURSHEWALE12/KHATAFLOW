@@ -25,15 +25,23 @@ export default function App() {
         setInitializing(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
           if (!loadedRef.current) {
             loadedRef.current = true;
             await loadUserData(session.user.id);
           }
           setInitializing(false);
-        } else {
+        } else if (event === "SIGNED_OUT") {
+          // Explicit signout triggered by user action
           loadedRef.current = false;
+          useKhataStore.setState({
+            currentUser: null,
+            friends: [],
+            ledgers: [],
+            transactions: [],
+            notifications: []
+          });
           setInitializing(false);
         }
       });
