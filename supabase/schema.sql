@@ -90,9 +90,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- ==============================================================
 
 -- Trigger to automatically create a profile in public.users on signup
--- Bulletproof migration handles the case where guest + real user rows both exist for the same email.
--- Trigger to automatically create a profile in public.users on signup
--- Bulletproof migration handles the case where guest + real user rows both exist for the same email.
+-- Bulletproof migration handles guest to real user conversion seamlessly with case-insensitivity.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -100,6 +98,11 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_old_id UUID;
+    v_ledger RECORD;
+    v_other_id UUID;
+    v_new_user_a UUID;
+    v_new_user_b UUID;
+    v_new_ledger_id UUID;
 BEGIN
     -- Find ANY existing row with matching email (case-insensitive)
     SELECT id INTO v_old_id FROM public.users
@@ -108,24 +111,43 @@ BEGIN
 
     -- If an old row exists and is different from the new real user ID, migrate it
     IF v_old_id IS NOT NULL AND v_old_id <> NEW.id THEN
-        -- Safely update friend relationships
+        -- 1. Migrate friend relationships
         UPDATE public.friend_relationships SET owner_id = NEW.id WHERE owner_id = v_old_id;
         UPDATE public.friend_relationships SET linked_user_id = NEW.id WHERE linked_user_id = v_old_id;
         
-        -- Safely update ledgers user_a
-        UPDATE public.ledgers SET user_a = NEW.id 
-        WHERE user_a = v_old_id 
-          AND NOT EXISTS (SELECT 1 FROM public.ledgers WHERE user_a = NEW.id AND user_b = ledgers.user_b);
-          
-        -- Safely update ledgers user_b
-        UPDATE public.ledgers SET user_b = NEW.id 
-        WHERE user_b = v_old_id 
-          AND NOT EXISTS (SELECT 1 FROM public.ledgers WHERE user_a = ledgers.user_a AND user_b = NEW.id);
-          
+        -- 2. Migrate ledgers robustly to prevent check_user_order violations
+        FOR v_ledger IN SELECT * FROM public.ledgers WHERE user_a = v_old_id OR user_b = v_old_id LOOP
+            -- Find the other participant
+            IF v_ledger.user_a = v_old_id THEN
+                v_other_id := v_ledger.user_b;
+            ELSE
+                v_other_id := v_ledger.user_a;
+            END IF;
+
+            -- Calculate canonical order for the new ledger
+            v_new_user_a := LEAST(NEW.id, v_other_id);
+            v_new_user_b := GREATEST(NEW.id, v_other_id);
+
+            -- Get or create the new ledger
+            INSERT INTO public.ledgers (user_a, user_b, balance)
+            VALUES (v_new_user_a, v_new_user_b, v_ledger.balance)
+            ON CONFLICT (user_a, user_b) DO UPDATE SET balance = ledgers.balance + EXCLUDED.balance
+            RETURNING id INTO v_new_ledger_id;
+
+            -- Move transactions to the new ledger
+            UPDATE public.transactions SET ledger_id = v_new_ledger_id WHERE ledger_id = v_ledger.id;
+
+            -- Delete the old ledger
+            DELETE FROM public.ledgers WHERE id = v_ledger.id;
+        END LOOP;
+
+        -- 3. Move transactions created by this user
         UPDATE public.transactions SET created_by = NEW.id WHERE created_by = v_old_id;
+
+        -- 4. Move notifications
         UPDATE public.notifications SET user_id = NEW.id WHERE user_id = v_old_id;
         
-        -- Delete the old row (any remaining conflicting ledgers/friends will cascade safely)
+        -- 5. Delete the old user row
         DELETE FROM public.users WHERE id = v_old_id;
     END IF;
 
@@ -432,6 +454,11 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_old_id UUID;
+    v_ledger RECORD;
+    v_other_id UUID;
+    v_new_user_a UUID;
+    v_new_user_b UUID;
+    v_new_ledger_id UUID;
 BEGIN
     -- Find ANY existing row with matching email (case-insensitive)
     SELECT id INTO v_old_id FROM public.users
@@ -440,24 +467,43 @@ BEGIN
 
     -- If an old row exists and is different from the real user ID, migrate it
     IF v_old_id IS NOT NULL AND v_old_id <> p_user_id THEN
-        -- Safely update friend relationships
+        -- 1. Migrate friend relationships
         UPDATE public.friend_relationships SET owner_id = p_user_id WHERE owner_id = v_old_id;
         UPDATE public.friend_relationships SET linked_user_id = p_user_id WHERE linked_user_id = v_old_id;
         
-        -- Safely update ledgers user_a
-        UPDATE public.ledgers SET user_a = p_user_id 
-        WHERE user_a = v_old_id 
-          AND NOT EXISTS (SELECT 1 FROM public.ledgers WHERE user_a = p_user_id AND user_b = ledgers.user_b);
-          
-        -- Safely update ledgers user_b
-        UPDATE public.ledgers SET user_b = p_user_id 
-        WHERE user_b = v_old_id 
-          AND NOT EXISTS (SELECT 1 FROM public.ledgers WHERE user_a = ledgers.user_a AND user_b = p_user_id);
-          
+        -- 2. Migrate ledgers robustly to prevent check_user_order violations
+        FOR v_ledger IN SELECT * FROM public.ledgers WHERE user_a = v_old_id OR user_b = v_old_id LOOP
+            -- Find the other participant
+            IF v_ledger.user_a = v_old_id THEN
+                v_other_id := v_ledger.user_b;
+            ELSE
+                v_other_id := v_ledger.user_a;
+            END IF;
+
+            -- Calculate canonical order for the new ledger
+            v_new_user_a := LEAST(p_user_id, v_other_id);
+            v_new_user_b := GREATEST(p_user_id, v_other_id);
+
+            -- Get or create the new ledger
+            INSERT INTO public.ledgers (user_a, user_b, balance)
+            VALUES (v_new_user_a, v_new_user_b, v_ledger.balance)
+            ON CONFLICT (user_a, user_b) DO UPDATE SET balance = ledgers.balance + EXCLUDED.balance
+            RETURNING id INTO v_new_ledger_id;
+
+            -- Move transactions to the new ledger
+            UPDATE public.transactions SET ledger_id = v_new_ledger_id WHERE ledger_id = v_ledger.id;
+
+            -- Delete the old ledger
+            DELETE FROM public.ledgers WHERE id = v_ledger.id;
+        END LOOP;
+
+        -- 3. Move transactions created by this user
         UPDATE public.transactions SET created_by = p_user_id WHERE created_by = v_old_id;
+
+        -- 4. Move notifications
         UPDATE public.notifications SET user_id = p_user_id WHERE user_id = v_old_id;
         
-        -- Delete the old row (any remaining conflicting ledgers/friends will cascade safely)
+        -- 5. Delete the old user row
         DELETE FROM public.users WHERE id = v_old_id;
     END IF;
 
