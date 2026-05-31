@@ -579,28 +579,26 @@ export default function LedgerView() {
                                 Recorded by {isCreatorMe ? "You" : activeFriend.name}
                               </span>
 
-                              {isCreatorMe && (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <button
-                                    onClick={() => handleEditClick(tx)}
-                                    className="w-5.5 h-5.5 rounded-[4px] bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-[#0A0A0B] border border-[#10B981]/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
-                                    title="Edit entry"
-                                  >
-                                    <Pencil size={10} />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (confirm("Are you sure you want to delete this entry? Balance will automatically recalculate.")) {
-                                        deleteTransaction(tx.id);
-                                      }
-                                    }}
-                                    className="w-5.5 h-5.5 rounded-[4px] bg-error-text/10 hover:bg-[#EF4444] text-error-text hover:text-white border border-error-text/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
-                                    title="Delete entry"
-                                  >
-                                    <Trash2 size={10} />
-                                  </button>
-                                </div>
-                              )}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={() => handleEditClick(tx)}
+                                  className="w-5.5 h-5.5 rounded-[4px] bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-[#0A0A0B] border border-[#10B981]/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
+                                  title="Edit entry"
+                                >
+                                  <Pencil size={10} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this entry? Balance will automatically recalculate.")) {
+                                      deleteTransaction(tx.id);
+                                    }
+                                  }}
+                                  className="w-5.5 h-5.5 rounded-[4px] bg-error-text/10 hover:bg-[#EF4444] text-error-text hover:text-white border border-error-text/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
+                                  title="Delete entry"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Print-only fallback for metadata */}
