@@ -157,7 +157,10 @@ export default function LedgerView() {
   );
 
   const getFriendLedger = (f: Friend) => {
-    const fId = f.linkedUserId || f.id;
+    // Resolve the other participant ID dynamically:
+    // If we are the owner of the friendship record f, the friend's ID is f.linkedUserId || f.id.
+    // If we are the inbound friend (added by f.ownerId), the other participant's ID is f.ownerId.
+    const fId = f.ownerId === currentUser.id ? (f.linkedUserId || f.id) : f.ownerId;
     return ledgers.find(
       (l) =>
         (l.userA === currentUser.id && l.userB === fId) ||
