@@ -67,6 +67,34 @@ export default function App() {
     }
   }, []);
 
+  // Subscribe to real-time database updates for instant chat and ledger syncing
+  useEffect(() => {
+    const sb = supabase;
+    if (!currentUser || !isSupabaseConfigured || !sb) return;
+
+    const channel = sb
+      .channel("schema-db-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions" },
+        () => {
+          loadUserData(currentUser.id);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ledgers" },
+        () => {
+          loadUserData(currentUser.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [currentUser]);
+
   useEffect(() => {
     if (initializing || isLoading) {
       const timer = setTimeout(() => {
