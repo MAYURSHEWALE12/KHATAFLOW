@@ -95,6 +95,17 @@ export default function App() {
     };
   }, [currentUser]);
 
+  // Bulletproof 3-second polling fallback to ensure syncing even if Supabase Realtime replication is disabled
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const interval = setInterval(() => {
+      loadUserData(currentUser.id);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   useEffect(() => {
     if (initializing || isLoading) {
       const timer = setTimeout(() => {
