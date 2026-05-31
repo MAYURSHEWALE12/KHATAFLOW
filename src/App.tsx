@@ -15,6 +15,17 @@ export default function App() {
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
+      // Get the initial session directly to determine early if we are authenticated
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session?.user) {
+          loadedRef.current = true;
+          await loadUserData(session.user.id);
+        }
+        setInitializing(false);
+      }).catch(() => {
+        setInitializing(false);
+      });
+
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
           if (!loadedRef.current) {
@@ -22,12 +33,10 @@ export default function App() {
             await loadUserData(session.user.id);
           }
           setInitializing(false);
-        } else if (event === "SIGNED_OUT" || event === "INITIAL_SESSION") {
-          if (!session?.user) {
-            loadedRef.current = false;
-            await logout();
-            setInitializing(false);
-          }
+        } else if (event === "SIGNED_OUT") {
+          loadedRef.current = false;
+          await logout();
+          setInitializing(false);
         }
       });
 
