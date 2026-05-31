@@ -10,7 +10,8 @@ export default function DashboardView() {
   const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, transactions, notifications, 
-    logout, addFriend, markNotificationsRead, theme, toggleTheme
+    logout, addFriend, markNotificationsRead, theme, toggleTheme,
+    updateProfile
   } = useKhataStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,6 +23,12 @@ export default function DashboardView() {
   const [friendEmail, setFriendEmail] = useState("");
   const [friendPhone, setFriendPhone] = useState("");
   const [formError, setFormError] = useState("");
+
+  // Profile Form States
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
 
   if (!currentUser) return null;
 
@@ -178,17 +185,25 @@ export default function DashboardView() {
           </button>
 
           {/* User Profile Info */}
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-[4px] border border-[#26272B] bg-[#151618]/30">
+          <button 
+            onClick={() => {
+              setProfileName(currentUser.name);
+              setProfileError("");
+              setIsProfileModalOpen(true);
+            }}
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-[4px] border border-[#26272B] bg-[#151618]/30 hover:bg-[#26272B]/60 hover:border-[#10B981]/50 cursor-pointer transition-all duration-200 group text-[#F5F5F5] outline-none"
+            title="Edit My Profile"
+          >
             <img 
               src={currentUser.avatarUrl} 
               alt={currentUser.name} 
-              className="w-7 h-7 rounded-[4px] border border-[#26272B] bg-[#0A0A0B]" 
+              className="w-7 h-7 rounded-[4px] border border-[#26272B] group-hover:border-[#10B981]/50 bg-[#0A0A0B] transition-colors" 
             />
             <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold">{currentUser.name}</p>
+              <p className="text-xs font-semibold group-hover:text-[#10B981] transition-colors">{currentUser.name}</p>
               <p className="text-[9px] text-[#A1A1AA] max-w-[100px] truncate">{currentUser.email}</p>
             </div>
-          </div>
+          </button>
 
           {/* Logout Button */}
           <button 
@@ -496,6 +511,103 @@ export default function DashboardView() {
                   className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all"
                 >
                   Add & Open Ledger
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Modal: Edit Profile */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 bg-[#0A0A0B]/80 backdrop-blur-sm z-50 flex items-center justify-center px-4 animate-fade-in">
+          <div className="w-full max-w-md bg-[#111214] border border-[#26272B] rounded-[4px] p-6 shadow-2xl relative text-left animate-slide-in">
+            <button 
+              onClick={() => setIsProfileModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-[#26272B] flex items-center justify-center text-[#A1A1AA] cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-5">
+              <h3 className="text-lg font-bold text-[#F5F5F5] flex items-center gap-1.5">
+                <Sparkles size={18} className="text-[#10B981]" /> Edit Profile
+              </h3>
+              <p className="text-xs text-[#A1A1AA] mt-1 font-medium font-sans">
+                Update your display name. Your dynamic adventurer avatar seed will regenerate instantly!
+              </p>
+            </div>
+
+            {profileError && (
+              <div className="mb-4 flex items-center gap-2 p-3 rounded-[4px] bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-xs">
+                <ShieldAlert size={16} />
+                <span>{profileError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col items-center gap-4 mb-6 p-4 rounded-[4px] border border-[#26272B] bg-[#151618]/30">
+              <div className="relative group">
+                <img 
+                  src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(profileName.trim() || currentUser.name)}`} 
+                  alt="Avatar Preview" 
+                  className="w-20 h-20 rounded-[4px] border border-[#26272B] bg-[#0A0A0B] shadow-inner"
+                />
+                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded bg-[#10B981]/10 border border-[#10B981]/30 text-[8px] text-[#10B981] font-bold">
+                  LIVE PREVIEW
+                </span>
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-bold text-[#F5F5F5]">{profileName.trim() || currentUser.name}</p>
+                <p className="text-[10px] text-[#A1A1AA] mt-0.5">{currentUser.email}</p>
+              </div>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setProfileError("");
+              if (!profileName.trim()) {
+                setProfileError("Display name cannot be empty.");
+                return;
+              }
+              setIsProfileSaving(true);
+              try {
+                await updateProfile(profileName);
+                setIsProfileModalOpen(false);
+              } catch (err) {
+                setProfileError(err instanceof Error ? err.message : "Failed to update profile.");
+              } finally {
+                setIsProfileSaving(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">Display Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mayur Shewale"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  className="w-full bg-[#0A0A0B] border border-[#26272B] rounded-[4px] py-3 px-4 text-xs text-[#F5F5F5] placeholder-[#A1A1AA]/45 focus:outline-none focus:border-[#10B981] transition-all"
+                  required
+                  maxLength={50}
+                  disabled={isProfileSaving}
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="px-4 py-2.5 rounded-[4px] border border-[#26272B] hover:bg-[#151618] text-xs font-semibold cursor-pointer text-[#A1A1AA] transition-all"
+                  disabled={isProfileSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  disabled={isProfileSaving}
+                >
+                  {isProfileSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
