@@ -407,10 +407,13 @@ export default function LedgerView() {
                 <div className="space-y-4">
                   {ledgerTransactions.map((tx) => {
                     const isCreatorMe = tx.createdBy === currentUser.id;
-                    const isRepayment = tx.type === "payment_received" || tx.type === "settlement";
                     
-                    // Align left for Received (+) and right for Given (-)
-                    const alignRight = !isRepayment;
+                    // Outbound actions from the creator's perspective: anything other than payment_received
+                    const isCreatorOutbound = tx.type !== "payment_received";
+                    
+                    // Align right (outbound) if the logged-in user created an outbound transaction,
+                    // or if the other user created an inbound (payment_received) transaction.
+                    const alignRight = isCreatorMe ? isCreatorOutbound : !isCreatorOutbound;
                     
                     const runningVal = runningBalances[tx.id] || 0;
                     
@@ -442,7 +445,7 @@ export default function LedgerView() {
                           } print:border-neutral-300 print:text-black print:bg-white`}>
                             
                             <div className={`inline-flex text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-[4px] mb-2 ${
-                              isRepayment 
+                              !alignRight 
                                 ? "bg-[#10B981]/15 text-[#10B981] print:bg-green-100" 
                                 : "bg-background text-secondary-text border border-border-color print:bg-neutral-100"
                             }`}>
@@ -455,9 +458,9 @@ export default function LedgerView() {
 
                             <div className={`flex items-baseline gap-1 ${alignRight ? "justify-end" : "justify-start"}`}>
                               <span className={`text-lg font-black font-mono ${
-                                isRepayment ? "text-[#10B981]" : "text-error-text"
+                                !alignRight ? "text-[#10B981]" : "text-error-text"
                               } print:text-black flex items-center gap-0.5`}>
-                                <span className="text-sm font-extrabold">{isRepayment ? "+ ↓" : "- ↑"}</span>
+                                <span className="text-sm font-extrabold">{!alignRight ? "+ ↓" : "- ↑"}</span>
                                 <span>₹{tx.amount.toLocaleString()}</span>
                               </span>
                             </div>
