@@ -430,13 +430,13 @@ export default function LedgerView() {
       {/* RIGHT COLUMN: Chat View (Scrollable timeline feed + top profile bar) */}
       <div className="flex-grow flex flex-col h-full overflow-hidden relative">
         
-        {/* Chat Profile Header (Strictly at the top of the right chat column, like WhatsApp/Slack) */}
-        <header className="h-14 border-b border-border-color bg-sidebar px-4 flex items-center justify-between shrink-0 print:hidden transition-colors duration-300">
-          <div className="flex items-center gap-3">
-            {/* Back to dashboard button (Useful on Mobile screen size) */}
+        {/* Chat Profile Header */}
+        <header className="h-14 border-b border-border-color bg-sidebar px-3 flex items-center justify-between shrink-0 print:hidden transition-colors duration-300 gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Back button */}
             <button 
               onClick={() => navigate("/dashboard")}
-              className="w-8 h-8 rounded-[4px] hover:bg-card-bg border border-border-color flex items-center justify-center text-secondary-text hover:text-foreground transition-all cursor-pointer bg-sidebar"
+              className="w-8 h-8 rounded-[4px] hover:bg-card-bg border border-border-color flex items-center justify-center text-secondary-text hover:text-foreground transition-all cursor-pointer bg-sidebar shrink-0"
               title="Return to Dashboard"
             >
               <ArrowLeft size={15} />
@@ -444,29 +444,29 @@ export default function LedgerView() {
             
             <div 
               onClick={handleEditFriendClick}
-              className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-all"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-all min-w-0 flex-1"
               title="Click to Edit Friend Details"
             >
               <img 
                 src={activeFriend.avatarUrl} 
                 alt={activeFriend.name} 
-                className="w-8 h-8 rounded-[4px] border border-border-color bg-background shrink-0" 
+                className="w-8 h-8 rounded-full border border-border-color bg-background shrink-0 object-cover" 
               />
-              <div className="text-left">
-                <h3 className="text-xs font-bold flex items-center gap-1.5 leading-none">
+              <div className="text-left min-w-0">
+                <h3 className="text-xs font-bold leading-none truncate">
                   {activeFriend.name}
                 </h3>
                 <p className="text-[9px] text-[#10B981] font-bold flex items-center gap-1 mt-0.5 uppercase tracking-wide">
                   <span className="w-1 h-1 rounded-full bg-[#10B981] animate-pulse shrink-0" />
-                  Active Sync • {activeFriend.email}
+                  <span className="hidden sm:inline">Active Sync •&nbsp;</span>
+                  <span className="truncate max-w-[120px] sm:max-w-none">{activeFriend.email}</span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Ledger Toolbar actions in Chat header */}
-          <div className="flex items-center gap-1.5">
-            {/* Print PDF Button */}
+          {/* Toolbar */}
+          <div className="flex items-center gap-1 shrink-0">
             <button 
               onClick={handlePrint}
               className="w-8 h-8 rounded-[4px] border border-border-color hover:bg-card-bg text-secondary-text hover:text-foreground flex items-center justify-center transition-all cursor-pointer bg-sidebar"
@@ -475,69 +475,66 @@ export default function LedgerView() {
               <FileText size={14} />
             </button>
 
-            {/* WhatsApp Reminder Button */}
             <button 
               onClick={() => setIsShareReminderOpen(true)}
               className="w-8 h-8 rounded-[4px] border border-border-color hover:bg-card-bg text-secondary-text hover:text-[#10B981] flex items-center justify-center transition-all cursor-pointer bg-sidebar"
-              title="WhatsApp Reminder Generator"
+              title="WhatsApp Reminder"
             >
               <Share2 size={14} />
             </button>
 
-            {/* Quick Add Transaction Trigger */}
             <button 
               onClick={() => setIsAddTxOpen(true)}
-              className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-3 py-1.5 rounded-[4px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0 shadow-md shadow-[#10B981]/15"
+              className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-2.5 py-1.5 rounded-[4px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0 shadow-md shadow-[#10B981]/15"
             >
               <Plus size={13} />
-              <span>Add Entry</span>
+              <span className="hidden xs:inline sm:inline">Add</span>
             </button>
           </div>
         </header>
 
-        {/* Pinned Dynamic Outstanding Ledger Banner (Static at the top on screen, hidden on print) */}
-        <div className="shrink-0 px-4 md:px-6 py-4 bg-background border-b border-border-color/30 z-10 print:hidden">
+        {/* Pinned Dynamic Outstanding Ledger Banner */}
+        <div className="shrink-0 px-3 md:px-6 py-3 bg-background border-b border-border-color/30 z-10 print:hidden">
           <div className="max-w-3xl w-full mx-auto">
-            <section className="glass rounded-[4px] p-5 border border-border-color flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-left w-full sm:w-auto">
-                <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block">Shared Ledger Balance</span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <h2 className="text-3xl font-extrabold tracking-tight font-mono">
-                    {displayBalance >= 0 ? `₹${displayBalance.toLocaleString()}` : `-₹${Math.abs(displayBalance).toLocaleString()}`}
-                  </h2>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-[4px] ${
-                    displayBalance > 0 ? "bg-[#10B981]/15 text-[#10B981]" : displayBalance < 0 ? "bg-error-text/15 text-error-text" : "bg-card-bg text-secondary-text"
-                  }`}>
-                    {displayBalance > 0 ? "You are Owed" : displayBalance < 0 ? "You Owe" : "Settled"}
-                  </span>
+            <section className="glass rounded-[4px] p-4 border border-border-color">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="text-left">
+                  <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Shared Ledger Balance</span>
+                  <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono">
+                      {displayBalance >= 0 ? `₹${displayBalance.toLocaleString()}` : `-₹${Math.abs(displayBalance).toLocaleString()}`}
+                    </h2>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-[4px] ${
+                      displayBalance > 0 ? "bg-[#10B981]/15 text-[#10B981]" : displayBalance < 0 ? "bg-error-text/15 text-error-text" : "bg-card-bg text-secondary-text"
+                    }`}>
+                      {displayBalance > 0 ? "You are Owed" : displayBalance < 0 ? "You Owe" : "Settled"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-secondary-text mt-1 font-medium">
+                    {displayBalance > 0 ? `${activeFriend.name} needs to pay you back` : displayBalance < 0 ? `You need to pay back ${activeFriend.name}` : "Perfectly balanced!"}
+                  </p>
                 </div>
-                <p className="text-[10px] text-secondary-text mt-1.5 font-medium">
-                  {displayBalance > 0 ? `${activeFriend.name} needs to pay you back` : displayBalance < 0 ? `You need to pay back ${activeFriend.name}` : "Perfectly balanced relationship!"}
-                </p>
-              </div>
 
-              {/* Action buttons */}
-              {balance !== 0 && (
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {balance !== 0 && (
                   <button 
                     onClick={() => {
-                      if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
+                      if (confirm("Are you sure you want to settle all outstanding balances?")) {
                         settleUp(activeLedger.id);
                       }
                     }}
-                    className="w-full sm:w-auto bg-[#10B981]/10 hover:bg-[#10B981] border border-[#10B981]/30 hover:border-transparent text-[#10B981] hover:text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#10B981]/5"
+                    className="w-full sm:w-auto bg-[#10B981]/10 hover:bg-[#10B981] border border-[#10B981]/30 hover:border-transparent text-[#10B981] hover:text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                   >
                     <Check size={14} />
                     <span>Settle Entire Balance</span>
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </section>
           </div>
         </div>
 
         {/* Scrollable Chat Feed Area */}
-        <div className="flex-1 overflow-y-auto relative p-4 md:p-6 pb-20">
+        <div className="flex-1 overflow-y-auto relative p-3 md:p-6 pb-24">
           <div className="max-w-3xl w-full mx-auto flex flex-col gap-6">
             
             {/* Printable Statement header */}
@@ -620,10 +617,10 @@ export default function LedgerView() {
                             </p>
                           </div>
                         ) : (
-                          <div className={`max-w-[85%] p-4 border relative transition-all duration-300 hover:shadow-lg ${
+                          <div className={`w-full max-w-[92%] sm:max-w-[85%] p-3 sm:p-4 border relative transition-all duration-300 hover:shadow-lg ${
                             alignRight 
-                              ? "bg-error-text/[0.03] dark:bg-error-text/[0.05] border-error-text/25 hover:border-error-text/45 text-right rounded-2xl rounded-tr-none shadow-sm shadow-error-text/[0.01]" 
-                              : "bg-[#10B981]/[0.03] dark:bg-[#10B981]/[0.05] border-[#10B981]/25 hover:border-[#10B981]/45 text-left rounded-2xl rounded-tl-none shadow-sm shadow-[#10B981]/0.01"
+                              ? "bg-error-text/[0.03] dark:bg-error-text/[0.05] border-error-text/25 hover:border-error-text/45 text-right rounded-2xl rounded-tr-none shadow-sm" 
+                              : "bg-[#10B981]/[0.03] dark:bg-[#10B981]/[0.05] border-[#10B981]/25 hover:border-[#10B981]/45 text-left rounded-2xl rounded-tl-none shadow-sm"
                           } print:border-neutral-300 print:text-black print:bg-white`}>
                             
                             <div className={`inline-flex text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-[4px] mb-2 ${
@@ -704,47 +701,41 @@ export default function LedgerView() {
           </div>
         </div>
 
-        {/* Sticky Bottom Actions Bar (OkCredit / Khatabook Style Reference) */}
-        <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-md border-t border-border-color py-3.5 px-4 z-40 print:hidden transition-colors duration-300">
-          <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+        {/* Sticky Bottom Actions Bar */}
+        <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border-color py-3 px-3 z-40 print:hidden transition-colors duration-300">
+          <div className="max-w-3xl mx-auto flex items-center gap-2">
             
-            {/* Quick share actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsShareReminderOpen(true)}
-                className="h-10 px-4 rounded-[4px] border border-border-color bg-card-bg hover:bg-border-color text-xs font-bold text-[#10B981] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-                title="Share Settlement Reminder"
-              >
-                <Share2 size={14} />
-                <span className="hidden sm:inline">Remind</span>
-              </button>
-            </div>
+            {/* Share button */}
+            <button
+              onClick={() => setIsShareReminderOpen(true)}
+              className="h-11 w-11 rounded-[4px] border border-border-color bg-card-bg hover:bg-border-color text-xs font-bold text-[#10B981] flex items-center justify-center cursor-pointer transition-all shrink-0"
+              title="Share Settlement Reminder"
+            >
+              <Share2 size={16} />
+            </button>
 
-            {/* Symmetrical OkCredit Given/Received Buttons */}
-            <div className="flex items-center gap-3 flex-1 justify-end">
-              <button
-                onClick={() => {
-                  setTxType("payment_received");
-                  setIsAddTxOpen(true);
-                }}
-                className="flex-1 sm:flex-initial bg-[#10B981]/10 hover:bg-[#10B981]/20 border border-[#10B981]/30 hover:border-[#10B981] text-[#10B981] px-6 py-2.5 rounded-[4px] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span className="text-sm font-extrabold">↓</span>
-                <span>Received</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setTxType("credit_given");
-                  setIsAddTxOpen(true);
-                }}
-                className="flex-1 sm:flex-initial bg-error-text/10 hover:bg-error-text/20 border border-error-text/30 hover:border-error-text text-error-text px-6 py-2.5 rounded-[4px] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span className="text-sm font-extrabold">↑</span>
-                <span>Given</span>
-              </button>
-            </div>
-
+            {/* Received / Given Buttons */}
+            <button
+              onClick={() => {
+                setTxType("payment_received");
+                setIsAddTxOpen(true);
+              }}
+              className="flex-1 h-11 bg-[#10B981]/10 hover:bg-[#10B981]/20 border border-[#10B981]/30 hover:border-[#10B981] text-[#10B981] rounded-[4px] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            >
+              <span className="text-sm font-extrabold">↓</span>
+              <span>Received</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                setTxType("credit_given");
+                setIsAddTxOpen(true);
+              }}
+              className="flex-1 h-11 bg-error-text/10 hover:bg-error-text/20 border border-error-text/30 hover:border-error-text text-error-text rounded-[4px] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            >
+              <span className="text-sm font-extrabold">↑</span>
+              <span>Given</span>
+            </button>
           </div>
         </div>
 
@@ -752,8 +743,8 @@ export default function LedgerView() {
 
       {/* Dialog Modal: Add Transaction */}
       {isAddTxOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
-          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center print:hidden animate-slide-in">
+          <div className="w-full sm:max-w-md bg-sidebar border border-border-color sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setIsAddTxOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-card-bg flex items-center justify-center text-secondary-text cursor-pointer"
@@ -880,8 +871,8 @@ export default function LedgerView() {
 
       {/* Dialog Modal: Edit Transaction */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
-          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center print:hidden animate-slide-in">
+          <div className="w-full sm:max-w-md bg-sidebar border border-border-color sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => {
                 setIsEditOpen(false);
@@ -1014,8 +1005,8 @@ export default function LedgerView() {
 
       {/* Dialog Modal: Edit Friend Profile */}
       {isEditFriendOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
-          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center print:hidden animate-slide-in">
+          <div className="w-full sm:max-w-md bg-sidebar border border-border-color sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setIsEditFriendOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-card-bg flex items-center justify-center text-secondary-text cursor-pointer"
@@ -1088,8 +1079,8 @@ export default function LedgerView() {
 
       {/* Dialog Modal: Share / Reminder */}
       {isShareReminderOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
-          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center print:hidden animate-slide-in">
+          <div className="w-full sm:max-w-md bg-sidebar border border-border-color sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setIsShareReminderOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-card-bg flex items-center justify-center text-secondary-text cursor-pointer"

@@ -150,23 +150,23 @@ export default function DashboardView() {
       <div className="absolute bottom-0 left-0 w-[350px] h-[350px] rounded-full bg-[#EF4444]/2 blur-[130px] pointer-events-none" />
 
       {/* Top Navigation Bar */}
-      <header className="border-b border-[#26272B] bg-[#111214]/80 backdrop-blur-md sticky top-0 z-30 px-4 md:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-[#26272B] bg-[#111214]/80 backdrop-blur-md sticky top-0 z-30 px-3 md:px-8 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <div>
-            <span className="font-extrabold text-lg tracking-tight leading-none block">Khata<span className="text-[#10B981]">Flow</span></span>
+            <span className="font-extrabold text-base md:text-lg tracking-tight leading-none block">Khata<span className="text-[#10B981]">Flow</span></span>
             <p className="text-[10px] text-[#A1A1AA] hidden sm:block font-medium mt-0.5">Track Money. Stay Friends.</p>
           </div>
         </div>
 
         {/* User Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 md:gap-3">
           {/* Visual Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-[4px] border border-[#26272B] bg-[#151618]/60 hover:bg-[#26272B] flex items-center justify-center cursor-pointer transition-all text-[#A1A1AA] hover:text-[#F5F5F5]"
+            className="w-9 h-9 rounded-[4px] border border-[#26272B] bg-[#151618]/60 hover:bg-[#26272B] flex items-center justify-center cursor-pointer transition-all text-[#A1A1AA] hover:text-[#F5F5F5]"
             title="Toggle Visual Theme"
           >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {/* Notifications Trigger */}
@@ -175,11 +175,11 @@ export default function DashboardView() {
               setIsNotifOpen(!isNotifOpen);
               if (unreadNotifs > 0) markNotificationsRead();
             }}
-            className="w-10 h-10 rounded-[4px] border border-[#26272B] bg-[#151618]/60 hover:bg-[#26272B] flex items-center justify-center relative cursor-pointer transition-all"
+            className="w-9 h-9 rounded-[4px] border border-[#26272B] bg-[#151618]/60 hover:bg-[#26272B] flex items-center justify-center relative cursor-pointer transition-all"
           >
-            <Bell size={18} className="text-[#A1A1AA]" />
+            <Bell size={16} className="text-[#A1A1AA]" />
             {unreadNotifs > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#10B981] text-[#0A0A0B] font-black text-[10px] flex items-center justify-center animate-bounce">
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#10B981] text-[#0A0A0B] font-black text-[9px] flex items-center justify-center animate-bounce">
                 {unreadNotifs}
               </span>
             )}
@@ -197,17 +197,17 @@ export default function DashboardView() {
               }
               setIsProfileModalOpen(true);
             }}
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-[4px] border border-[#26272B] bg-[#151618]/30 hover:bg-[#26272B]/60 hover:border-[#10B981]/50 cursor-pointer transition-all duration-200 group text-[#F5F5F5] outline-none"
+            className="flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1.5 rounded-[4px] border border-[#26272B] bg-[#151618]/30 hover:bg-[#26272B]/60 hover:border-[#10B981]/50 cursor-pointer transition-all duration-200 group text-[#F5F5F5] outline-none"
             title="Edit My Profile"
           >
             <img 
               src={currentUser.avatarUrl} 
               alt={currentUser.name} 
-              className="w-7 h-7 rounded-[4px] border border-[#26272B] group-hover:border-[#10B981]/50 bg-[#0A0A0B] transition-colors" 
+              className="w-6 h-6 md:w-7 md:h-7 rounded-full border border-[#26272B] group-hover:border-[#10B981]/50 bg-[#0A0A0B] transition-colors object-cover" 
             />
             <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold group-hover:text-[#10B981] transition-colors">{currentUser.name}</p>
-              <p className="text-[9px] text-[#A1A1AA] max-w-[100px] truncate">{currentUser.email}</p>
+              <p className="text-xs font-semibold group-hover:text-[#10B981] transition-colors truncate max-w-[80px] md:max-w-[100px]">{currentUser.name}</p>
+              <p className="text-[9px] text-[#A1A1AA] max-w-[80px] md:max-w-[100px] truncate">{currentUser.email}</p>
             </div>
           </button>
 
@@ -217,16 +217,16 @@ export default function DashboardView() {
               await logout();
               window.location.href = "/";
             }}
-            className="w-10 h-10 rounded-[4px] border border-[#26272B] hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 hover:text-[#EF4444] text-[#A1A1AA] flex items-center justify-center cursor-pointer transition-all"
+            className="w-9 h-9 rounded-[4px] border border-[#26272B] hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 hover:text-[#EF4444] text-[#A1A1AA] flex items-center justify-center cursor-pointer transition-all"
             title="Log Out"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
           </button>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 py-8 space-y-8 z-10">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 md:px-8 py-5 md:py-8 space-y-5 md:space-y-8 z-10">
         
         {/* KPI Dashboard Card Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -443,8 +443,8 @@ export default function DashboardView() {
 
       {/* Dialog Modal: Add Friend */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/80 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="w-full max-w-md bg-[#111214] border border-[#26272B] rounded-[4px] p-6 shadow-2xl relative text-left animate-slide-in">
+        <div className="fixed inset-0 bg-[#0A0A0B]/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+          <div className="w-full sm:max-w-md bg-[#111214] border border-[#26272B] sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left animate-slide-in max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setIsAddModalOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-[#26272B] flex items-center justify-center text-[#A1A1AA] cursor-pointer"
@@ -530,8 +530,8 @@ export default function DashboardView() {
 
       {/* Dialog Modal: Edit Profile */}
       {isProfileModalOpen && (
-        <div className="fixed inset-0 bg-[#0A0A0B]/80 backdrop-blur-sm z-50 flex items-center justify-center px-4 animate-fade-in">
-          <div className="w-full max-w-md bg-[#111214] border border-[#26272B] rounded-[4px] p-6 shadow-2xl relative text-left animate-slide-in">
+        <div className="fixed inset-0 bg-[#0A0A0B]/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center animate-fade-in">
+          <div className="w-full sm:max-w-md bg-[#111214] border border-[#26272B] sm:rounded-[4px] rounded-t-2xl p-5 sm:p-6 shadow-2xl relative text-left animate-slide-in max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setIsProfileModalOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-[#26272B] flex items-center justify-center text-[#A1A1AA] cursor-pointer"
