@@ -8,7 +8,7 @@ import DashboardView from "./components/DashboardView";
 import LedgerView from "./components/LedgerView";
 
 export default function App() {
-  const { currentUser, isLoading, loadUserData, logout } = useKhataStore();
+  const { currentUser, isLoading, loadUserData } = useKhataStore();
   const [initializing, setInitializing] = useState(true);
   const loadedRef = useRef(false);
 
@@ -25,16 +25,12 @@ export default function App() {
         setInitializing(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
         if (session?.user) {
           if (!loadedRef.current) {
             loadedRef.current = true;
             await loadUserData(session.user.id);
           }
-          setInitializing(false);
-        } else if (event === "SIGNED_OUT") {
-          loadedRef.current = false;
-          await logout();
           setInitializing(false);
         }
       });
