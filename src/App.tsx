@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useKhataStore } from "./store/useKhataStore";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import LandingView from "./components/LandingView";
@@ -11,20 +11,24 @@ export default function App() {
   const [view, setView] = useState<"landing" | "login" | "dashboard" | "ledger">("landing");
   const [selectedLedgerId, setSelectedLedgerId] = useState<string>("");
   const [initializing, setInitializing] = useState(true);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
+        if (session?.user && !loadedRef.current) {
+          loadedRef.current = true;
           loadUserData(session.user.id);
         }
         setInitializing(false);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
+        if (session?.user && !loadedRef.current) {
+          loadedRef.current = true;
           loadUserData(session.user.id);
-        } else {
+        } else if (!session?.user) {
+          loadedRef.current = false;
           logout();
         }
       });
@@ -44,7 +48,7 @@ export default function App() {
       }
       setInitializing(false);
     }
-  }, [loadUserData, logout]);
+  }, []);
 
   useEffect(() => {
     if (!initializing && !isLoading) {
