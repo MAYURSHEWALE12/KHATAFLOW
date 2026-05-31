@@ -536,10 +536,10 @@ export default function LedgerView() {
                         </span>
 
                         {tx.isDeleted ? (
-                          <div className={`max-w-[85%] rounded-[4px] p-3 border relative transition-all duration-200 italic ${
+                          <div className={`max-w-[85%] p-3 border relative transition-all duration-200 italic ${
                             alignRight 
-                              ? "bg-card-bg/45 border-border-color/60 text-right text-secondary-text" 
-                              : "bg-sidebar/45 border-border-color/60 text-left text-secondary-text"
+                              ? "bg-card-bg/25 border-border-color/40 text-right text-secondary-text rounded-2xl rounded-tr-none" 
+                              : "bg-sidebar/25 border-border-color/40 text-left text-secondary-text rounded-2xl rounded-tl-none"
                           } print:border-neutral-300 print:text-neutral-400`}>
                             <p className="text-xs flex items-center gap-1.5 font-medium leading-none">
                               <span className="text-secondary-text/60">🚫</span>
@@ -547,16 +547,16 @@ export default function LedgerView() {
                             </p>
                           </div>
                         ) : (
-                          <div className={`max-w-[85%] rounded-[4px] p-4 border relative transition-all duration-200 ${
+                          <div className={`max-w-[85%] p-4 border relative transition-all duration-300 hover:shadow-lg ${
                             alignRight 
-                              ? "bg-card-bg border-border-color text-right" 
-                              : "bg-sidebar border-border-color text-left"
+                              ? "bg-error-text/[0.03] dark:bg-error-text/[0.05] border-error-text/25 hover:border-error-text/45 text-right rounded-2xl rounded-tr-none shadow-sm shadow-error-text/[0.01]" 
+                              : "bg-[#10B981]/[0.03] dark:bg-[#10B981]/[0.05] border-[#10B981]/25 hover:border-[#10B981]/45 text-left rounded-2xl rounded-tl-none shadow-sm shadow-[#10B981]/0.01"
                           } print:border-neutral-300 print:text-black print:bg-white`}>
                             
                             <div className={`inline-flex text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-[4px] mb-2 ${
                               !alignRight 
                                 ? "bg-[#10B981]/15 text-[#10B981] print:bg-green-100" 
-                                : "bg-background text-secondary-text border border-border-color print:bg-neutral-100"
+                                : "bg-error-text/15 text-error-text print:bg-red-100"
                             }`}>
                               {tx.type.replace("_", " ")}
                             </div>
@@ -574,7 +574,9 @@ export default function LedgerView() {
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between gap-4 mt-3 border-t border-border-color/30 pt-2 print:hidden">
+                            <div className={`flex items-center justify-between gap-4 mt-3 border-t pt-2 print:hidden ${
+                              alignRight ? "border-error-text/10" : "border-[#10B981]/10"
+                            }`}>
                               <span className="block text-[8px] text-neutral-500 font-semibold">
                                 Recorded by {isCreatorMe ? "You" : activeFriend.name}
                               </span>
@@ -582,7 +584,11 @@ export default function LedgerView() {
                               <div className="flex items-center gap-1.5 shrink-0">
                                 <button
                                   onClick={() => handleEditClick(tx)}
-                                  className="w-5.5 h-5.5 rounded-[4px] bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-[#0A0A0B] border border-[#10B981]/20 hover:border-transparent flex items-center justify-center cursor-pointer transition-all p-1"
+                                  className={`w-5.5 h-5.5 rounded-[4px] flex items-center justify-center cursor-pointer transition-all p-1 ${
+                                    alignRight
+                                      ? "bg-error-text/10 hover:bg-error-text text-error-text hover:text-white border border-error-text/20 hover:border-transparent"
+                                      : "bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-[#0A0A0B] border border-[#10B981]/20 hover:border-transparent"
+                                  }`}
                                   title="Edit entry"
                                 >
                                   <Pencil size={10} />
