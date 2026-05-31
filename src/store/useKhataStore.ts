@@ -330,6 +330,7 @@ export const useKhataStore = create<KhataState>((set, get) => {
           const notifications: Notification[] = (notifsRes.data || []).map(toNotification);
 
           set({ currentUser, friends, ledgers, transactions, notifications, isLoading: false });
+          persist("khata_user", currentUser);
           return;
         } catch (err) {
           const message = err instanceof Error ? err.message : "Unknown error";

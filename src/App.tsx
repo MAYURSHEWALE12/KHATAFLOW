@@ -13,6 +13,21 @@ export default function App() {
   const loadedRef = useRef(false);
 
   useEffect(() => {
+    // 1. Sync local storage fast-hydration fallback immediately to prevent routing redirect race
+    const stored = localStorage.getItem("khata_user");
+    if (stored) {
+      try {
+        const user = JSON.parse(stored);
+        if (user?.id) {
+          useKhataStore.setState({ currentUser: user });
+          loadedRef.current = true;
+          loadUserData(user.id);
+        }
+      } catch {
+        console.warn("Failed to parse stored user");
+      }
+    }
+
     if (isSupabaseConfigured && supabase) {
       // Get the initial session directly to determine early if we are authenticated
       supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -48,17 +63,6 @@ export default function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      const stored = localStorage.getItem("khata_user");
-      if (stored) {
-        try {
-          const user = JSON.parse(stored);
-          if (user?.id) {
-            loadUserData(user.id);
-          }
-        } catch {
-          console.warn("Failed to parse stored user");
-        }
-      }
       setInitializing(false);
     }
   }, []);
