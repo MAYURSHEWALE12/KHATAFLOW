@@ -256,17 +256,48 @@ export default function LedgerView() {
   };
 
   // Generate WhatsApp Reminder Link
+  const APP_URL = "https://khataflow.vercel.app";
+
+  const getWhatsAppMessage = () => {
+    const formattedAmt = `₹${Math.abs(displayBalance).toLocaleString()}`;
+    const friendEmail = activeFriend.email || "";
+    const note = customNote.trim();
+
+    if (displayBalance > 0) {
+      // They owe us
+      return (
+        `🙏 *Hi ${activeFriend.name}!*\n\n` +
+        `This is a friendly reminder from *${currentUser.name}* regarding our shared KhataFlow ledger.\n\n` +
+        `💰 *Amount Due: ${formattedAmt}*\n` +
+        `📋 Status: *You owe me*\n\n` +
+        (note ? `📝 *Note:* ${note}\n\n` : "") +
+        `🔐 *View your live ledger & verify the balance:*\n` +
+        `${APP_URL}\n\n` +
+        (friendEmail ? `👤 *Login or register with your email:*\n*${friendEmail}*\n\nSign in to see the full transaction history between us in real-time.\n\n` : "") +
+        `_Powered by KhataFlow — Track Money. Stay Friends._ 💚`
+      );
+    } else {
+      // We owe them
+      return (
+        `🙏 *Hi ${activeFriend.name}!*\n\n` +
+        `Just a heads-up from *${currentUser.name}* — I'm tracking our balance on KhataFlow.\n\n` +
+        `💰 *Amount: ${formattedAmt}*\n` +
+        `📋 Status: *I owe you*\n\n` +
+        (note ? `📝 *Note:* ${note}\n\n` : "") +
+        `🔐 *View our shared ledger:*\n` +
+        `${APP_URL}\n\n` +
+        (friendEmail ? `👤 *Login or register with your email:*\n*${friendEmail}*\n\nYou can see every transaction recorded between us, anytime.\n\n` : "") +
+        `_Powered by KhataFlow — Track Money. Stay Friends._ 💚`
+      );
+    }
+  };
+
   const getWhatsAppReminderLink = () => {
-    const formattedAmt = Math.abs(displayBalance).toLocaleString();
-    const text = displayBalance > 0
-      ? `Hi ${activeFriend.name},\n\nYou currently owe ₹${formattedAmt}. ${customNote.trim()}\n\nRegards,\n${currentUser.name}`
-      : `Hi ${activeFriend.name},\n\nI currently owe you ₹${formattedAmt}. ${customNote.trim()}\n\nRegards,\n${currentUser.name}`;
-    
+    const text = getWhatsAppMessage();
     const cleanPhone = activeFriend.phone ? activeFriend.phone.replace(/[^0-9]/g, "") : "";
     if (cleanPhone) {
       return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
     }
-    
     return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
   };
 
@@ -1120,16 +1151,42 @@ export default function LedgerView() {
             </div>
 
             {/* Live Message Preview */}
-            <div className="p-4 rounded-[4px] border border-[#10B981]/15 bg-[#10B981]/5 text-xs text-secondary-text font-mono leading-relaxed space-y-1 mb-4">
-              <p className="text-[#10B981] font-bold text-[8px] uppercase tracking-wider mb-2">Sent Link Preview:</p>
-              <p>Hi {activeFriend.name},</p>
-              {displayBalance > 0 ? (
-                <p>You currently owe <span className="font-bold text-foreground">₹{Math.abs(displayBalance).toLocaleString()}</span>. {customNote}</p>
-              ) : (
-                <p>I currently owe you <span className="font-bold text-foreground">₹{Math.abs(displayBalance).toLocaleString()}</span>. {customNote}</p>
-              )}
-              <p>Regards,</p>
-              <p>{currentUser.name}</p>
+            <div className="p-4 rounded-[4px] border border-[#10B981]/20 bg-[#10B981]/5 mb-4 space-y-1.5">
+              <p className="text-[#10B981] font-bold text-[8px] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                Live Message Preview
+              </p>
+              <div className="text-xs text-foreground font-sans leading-relaxed space-y-1.5 bg-[#111214] rounded-[4px] p-3 border border-border-color">
+                <p>🙏 <strong>Hi {activeFriend.name}!</strong></p>
+                <p className="text-secondary-text">
+                  {displayBalance > 0
+                    ? <>This is a friendly reminder from <strong>{currentUser.name}</strong> regarding our shared KhataFlow ledger.</>  
+                    : <>Just a heads-up from <strong>{currentUser.name}</strong> — I'm tracking our balance on KhataFlow.</>}
+                </p>
+                <div className="border-t border-border-color/50 pt-1.5 mt-1.5 space-y-0.5">
+                  <p>💰 <strong>Amount: ₹{Math.abs(displayBalance).toLocaleString()}</strong></p>
+                  <p>📋 Status: <strong className={displayBalance > 0 ? "text-[#10B981]" : "text-error-text"}>{displayBalance > 0 ? "They owe you" : "You owe them"}</strong></p>
+                </div>
+                {customNote.trim() && (
+                  <p className="text-secondary-text">📝 <strong>Note:</strong> {customNote}</p>
+                )}
+                <div className="border-t border-border-color/50 pt-1.5 mt-1.5 space-y-0.5">
+                  <p>🔐 <strong>View live ledger:</strong></p>
+                  <p className="text-[#10B981] text-[10px] font-mono">khataflow.vercel.app</p>
+                </div>
+                {activeFriend.email && (
+                  <div className="space-y-0.5">
+                    <p>👤 <strong>Login or register with email:</strong></p>
+                    <p className="text-[#10B981] font-bold text-[10px] font-mono">{activeFriend.email}</p>
+                    <p className="text-secondary-text text-[10px]">
+                      {displayBalance > 0
+                        ? "Sign in to see the full transaction history between us in real-time."
+                        : "You can see every transaction recorded between us, anytime."}
+                    </p>
+                  </div>
+                )}
+                <p className="text-secondary-text text-[10px] italic border-t border-border-color/50 pt-1.5 mt-1">Powered by KhataFlow — Track Money. Stay Friends. 💚</p>
+              </div>
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-3">
