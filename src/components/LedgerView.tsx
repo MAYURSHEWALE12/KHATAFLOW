@@ -411,6 +411,22 @@ export default function LedgerView() {
               <Share2 size={14} />
             </button>
 
+            {/* Quick Settle Button */}
+            {balance !== 0 && (
+              <button 
+                onClick={() => {
+                  if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
+                    settleUp(activeLedger.id);
+                  }
+                }}
+                className="h-8 rounded-[4px] border border-[#10B981]/30 hover:border-[#10B981] bg-[#10B981]/10 text-[#10B981] px-2.5 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all shrink-0"
+                title="Settle Outstanding Balance"
+              >
+                <Check size={13} />
+                <span className="hidden sm:inline">Settle</span>
+              </button>
+            )}
+
             {/* Quick Add Transaction Trigger */}
             <button 
               onClick={() => setIsAddTxOpen(true)}
@@ -611,7 +627,7 @@ export default function LedgerView() {
         <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-md border-t border-border-color py-3.5 px-4 z-40 print:hidden transition-colors duration-300">
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
             
-            {/* Quick share actions */}
+             {/* Quick share & settle actions */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsShareReminderOpen(true)}
@@ -621,6 +637,21 @@ export default function LedgerView() {
                 <Share2 size={14} />
                 <span className="hidden sm:inline">Remind</span>
               </button>
+
+              {balance !== 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
+                      settleUp(activeLedger.id);
+                    }
+                  }}
+                  className="h-10 px-4 rounded-[4px] border border-border-color bg-card-bg hover:bg-border-color text-xs font-bold text-foreground hover:text-[#10B981] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+                  title="Settle Outstanding Balance"
+                >
+                  <Check size={14} className="text-[#10B981]" />
+                  <span>Settle</span>
+                </button>
+              )}
             </div>
 
             {/* Symmetrical OkCredit Given/Received Buttons */}
