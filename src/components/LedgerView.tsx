@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useKhataStore, type Transaction, type Friend } from "../store/useKhataStore";
 import { 
@@ -66,6 +66,25 @@ export default function LedgerView() {
       }
     }
   };
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    // Wrap in a tiny timeout to let the DOM settle first
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
+    }, 50);
+  };
+
+  // Scroll to bottom immediately on ledger load
+  useEffect(() => {
+    scrollToBottom("auto");
+  }, [ledgerId]);
+
+  // Scroll smoothly when transactions are added, edited, or deleted
+  useEffect(() => {
+    scrollToBottom("smooth");
+  }, [transactions.length]);
 
   if (!currentUser) return null;
 
@@ -584,6 +603,7 @@ export default function LedgerView() {
               )}
             </section>
 
+            <div ref={messagesEndRef} />
             {/* Bulletproof Scroll Spacer to prevent bottom bar overlapping content (Flexbox Padding Bugfix) */}
             <div className="h-28 shrink-0 print:hidden" />
           </div>
