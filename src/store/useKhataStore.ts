@@ -70,6 +70,7 @@ interface KhataState {
   addTransaction: (ledgerId: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   settleUp: (ledgerId: string) => Promise<void>;
+  ensureFriendLedger: (friendId: string) => Promise<string | null>;
   markNotificationsRead: () => Promise<void>;
 }
 
@@ -549,6 +550,39 @@ export const useKhataStore = create<KhataState>((set, get) => {
         );
         persist("khata_ledgers", updatedLedgers);
         set({ ledgers: updatedLedgers });
+      }
+    },
+
+    ensureFriendLedger: async (friendId: string): Promise<string | null> => {
+      if (!(isSupabaseConfigured && supabase)) return null;
+      try {
+        const { data: ledgerId, error } = await supabase.rpc("ensure_friend_ledger", {
+          p_friend_rel_id: friendId,
+        });
+        if (error) throw error;
+        if (ledgerId) {
+          const { data: fr } = await supabase
+            .from("friend_relationships")
+            .select("linked_user_id")
+            .eq("id", friendId)
+            .single<{ linked_user_id: string | null }>();
+          if (fr?.linked_user_id) {
+            const linkedUserId: string | undefined = fr.linked_user_id ?? undefined;
+            set({
+              friends: get().friends.map((f) =>
+                f.id === friendId ? { ...f, linkedUserId } : f
+              ),
+            });
+          }
+          const { data: ledgersData } = await supabase
+            .from("ledgers").select("*")
+            .or(`user_a.eq.${get().currentUser?.id},user_b.eq.${get().currentUser?.id}`)
+            .order("updated_at", { ascending: false }) as { data: DbLedger[] | null };
+          if (ledgersData) set({ ledgers: ledgersData.map(toLedger) });
+        }
+        return ledgerId as string | null;
+      } catch {
+        return null;
       }
     },
 

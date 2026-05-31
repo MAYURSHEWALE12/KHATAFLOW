@@ -66,6 +66,20 @@ export default function DashboardView({ onSelectFriendLedger, onLogout }: Dashbo
     );
   };
 
+  const handleFriendClick = async (friend: Friend) => {
+    const ledger = getFriendLedger(friend);
+    if (ledger) {
+      onSelectFriendLedger(ledger.id);
+      return;
+    }
+    try {
+      const newLedgerId = await useKhataStore.getState().ensureFriendLedger(friend.id);
+      if (newLedgerId) {
+        onSelectFriendLedger(newLedgerId);
+      }
+    } catch {}
+  };
+
   const handleAddFriendSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -90,12 +104,7 @@ export default function DashboardView({ onSelectFriendLedger, onLogout }: Dashbo
     setFriendPhone("");
     setIsAddModalOpen(false);
 
-    const targetLedger = getFriendLedger(newFriend);
-    if (targetLedger) {
-      onSelectFriendLedger(targetLedger.id);
-    } else {
-      onSelectFriendLedger(`ledger-${friendName.toLowerCase()}`);
-    }
+    handleFriendClick(newFriend);
   };
 
   const userNotifications = notifications.filter(n => n.userId === currentUser.id);
@@ -285,7 +294,7 @@ export default function DashboardView({ onSelectFriendLedger, onLogout }: Dashbo
                 return (
                   <div 
                     key={friend.id}
-                    onClick={() => onSelectFriendLedger(ledger?.id || `ledger-${friend.name.toLowerCase()}`)}
+                    onClick={() => handleFriendClick(friend)}
                     className="py-4 flex items-center justify-between hover:bg-[#151618]/30 px-3 -mx-3 rounded-[4px] cursor-pointer transition-all group"
                   >
                     {/* Friend Detail */}
