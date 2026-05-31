@@ -423,7 +423,7 @@ export default function LedgerView() {
         </header>
 
         {/* Scrollable Chat Feed Area */}
-        <div className="flex-1 overflow-y-auto relative p-4 md:p-6 pb-24">
+        <div className="flex-1 overflow-y-auto relative p-4 md:p-6 pb-20">
           <div className="max-w-3xl w-full mx-auto flex flex-col gap-6">
             
             {/* Printable Statement header */}
@@ -604,8 +604,6 @@ export default function LedgerView() {
             </section>
 
             <div ref={messagesEndRef} />
-            {/* Bulletproof Scroll Spacer to prevent bottom bar overlapping content (Flexbox Padding Bugfix) */}
-            <div className="h-28 shrink-0 print:hidden" />
           </div>
         </div>
 
