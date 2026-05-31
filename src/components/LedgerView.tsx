@@ -411,22 +411,6 @@ export default function LedgerView() {
               <Share2 size={14} />
             </button>
 
-            {/* Quick Settle Button */}
-            {balance !== 0 && (
-              <button 
-                onClick={() => {
-                  if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
-                    settleUp(activeLedger.id);
-                  }
-                }}
-                className="h-8 rounded-[4px] border border-[#10B981]/30 hover:border-[#10B981] bg-[#10B981]/10 text-[#10B981] px-2.5 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all shrink-0"
-                title="Settle Outstanding Balance"
-              >
-                <Check size={13} />
-                <span className="hidden sm:inline">Settle</span>
-              </button>
-            )}
-
             {/* Quick Add Transaction Trigger */}
             <button 
               onClick={() => setIsAddTxOpen(true)}
@@ -437,6 +421,47 @@ export default function LedgerView() {
             </button>
           </div>
         </header>
+
+        {/* Pinned Dynamic Outstanding Ledger Banner (Static at the top on screen, hidden on print) */}
+        <div className="shrink-0 px-4 md:px-6 py-4 bg-background border-b border-border-color/30 z-10 print:hidden">
+          <div className="max-w-3xl w-full mx-auto">
+            <section className="glass rounded-[4px] p-5 border border-border-color flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-left w-full sm:w-auto">
+                <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block">Shared Ledger Balance</span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h2 className="text-3xl font-extrabold tracking-tight font-mono">
+                    {displayBalance >= 0 ? `₹${displayBalance.toLocaleString()}` : `-₹${Math.abs(displayBalance).toLocaleString()}`}
+                  </h2>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-[4px] ${
+                    displayBalance > 0 ? "bg-[#10B981]/15 text-[#10B981]" : displayBalance < 0 ? "bg-error-text/15 text-error-text" : "bg-card-bg text-secondary-text"
+                  }`}>
+                    {displayBalance > 0 ? "You are Owed" : displayBalance < 0 ? "You Owe" : "Settled"}
+                  </span>
+                </div>
+                <p className="text-[10px] text-secondary-text mt-1.5 font-medium">
+                  {displayBalance > 0 ? `${activeFriend.name} needs to pay you back` : displayBalance < 0 ? `You need to pay back ${activeFriend.name}` : "Perfectly balanced relationship!"}
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              {balance !== 0 && (
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button 
+                    onClick={() => {
+                      if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
+                        settleUp(activeLedger.id);
+                      }
+                    }}
+                    className="w-full sm:w-auto bg-[#10B981]/10 hover:bg-[#10B981] border border-[#10B981]/30 hover:border-transparent text-[#10B981] hover:text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#10B981]/5"
+                  >
+                    <Check size={14} />
+                    <span>Settle Entire Balance</span>
+                  </button>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
 
         {/* Scrollable Chat Feed Area */}
         <div className="flex-1 overflow-y-auto relative p-4 md:p-6 pb-20">
@@ -454,44 +479,23 @@ export default function LedgerView() {
                   <p className="text-[10px] text-neutral-500 font-medium">Generated on {new Date().toLocaleDateString()}</p>
                 </div>
               </div>
-            </div>
 
-            {/* Dynamic Outstanding Ledger Banner */}
-            <section className="glass rounded-[4px] p-5 border border-border-color flex flex-col sm:flex-row items-center justify-between gap-4 print:border-neutral-300 print:text-black">
-              <div className="text-left w-full sm:w-auto">
-                <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block print:text-neutral-500">Shared Ledger Balance</span>
+              {/* Print-only Outstanding Ledger Banner */}
+              <div className="mt-4 p-4 border border-neutral-300 rounded-[4px] bg-neutral-50">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Shared Ledger Balance</span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <h2 className="text-3xl font-extrabold tracking-tight font-mono">
+                  <h2 className="text-2xl font-black font-mono">
                     {displayBalance >= 0 ? `₹${displayBalance.toLocaleString()}` : `-₹${Math.abs(displayBalance).toLocaleString()}`}
                   </h2>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-[4px] ${
-                    displayBalance > 0 ? "bg-[#10B981]/15 text-[#10B981] print:bg-green-100" : displayBalance < 0 ? "bg-error-text/15 text-error-text print:bg-red-100" : "bg-card-bg text-secondary-text print:bg-neutral-100"
-                  }`}>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-[4px] border border-neutral-300 bg-white">
                     {displayBalance > 0 ? "You are Owed" : displayBalance < 0 ? "You Owe" : "Settled"}
                   </span>
                 </div>
-                <p className="text-[10px] text-secondary-text mt-1.5 print:text-neutral-500 font-medium">
+                <p className="text-[10px] text-neutral-500 mt-1.5 font-medium">
                   {displayBalance > 0 ? `${activeFriend.name} needs to pay you back` : displayBalance < 0 ? `You need to pay back ${activeFriend.name}` : "Perfectly balanced relationship!"}
                 </p>
               </div>
-
-              {/* Action buttons */}
-              {balance !== 0 && (
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end print:hidden">
-                  <button 
-                    onClick={() => {
-                      if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
-                        settleUp(activeLedger.id);
-                      }
-                    }}
-                    className="w-full sm:w-auto bg-card-bg hover:bg-border-color border border-border-color hover:border-[#10B981]/40 text-foreground hover:text-[#10B981] px-4 py-2.5 rounded-[4px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                  >
-                    <Check size={14} />
-                    <span>Settle Entire Balance</span>
-                  </button>
-                </div>
-              )}
-            </section>
+            </div>
 
             {/* WhatsApp Chat-Style Ledger Feed */}
             <section className="flex-1 flex flex-col gap-4">
@@ -627,7 +631,7 @@ export default function LedgerView() {
         <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-md border-t border-border-color py-3.5 px-4 z-40 print:hidden transition-colors duration-300">
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
             
-             {/* Quick share & settle actions */}
+            {/* Quick share actions */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsShareReminderOpen(true)}
@@ -637,21 +641,6 @@ export default function LedgerView() {
                 <Share2 size={14} />
                 <span className="hidden sm:inline">Remind</span>
               </button>
-
-              {balance !== 0 && (
-                <button
-                  onClick={() => {
-                    if (confirm("Are you sure you want to completely settle all outstanding balances?")) {
-                      settleUp(activeLedger.id);
-                    }
-                  }}
-                  className="h-10 px-4 rounded-[4px] border border-border-color bg-card-bg hover:bg-border-color text-xs font-bold text-foreground hover:text-[#10B981] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-                  title="Settle Outstanding Balance"
-                >
-                  <Check size={14} className="text-[#10B981]" />
-                  <span>Settle</span>
-                </button>
-              )}
             </div>
 
             {/* Symmetrical OkCredit Given/Received Buttons */}
