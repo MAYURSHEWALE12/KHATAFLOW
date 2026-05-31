@@ -15,23 +15,24 @@ export default function App() {
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (session?.user && !loadedRef.current) {
           loadedRef.current = true;
-          loadUserData(session.user.id);
+          await loadUserData(session.user.id);
         }
         setInitializing(false);
       }).catch(() => {
         setInitializing(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user && !loadedRef.current) {
           loadedRef.current = true;
-          loadUserData(session.user.id);
+          await loadUserData(session.user.id);
+          setInitializing(false);
         } else if (event === "SIGNED_OUT" || !session?.user) {
           loadedRef.current = false;
-          logout();
+          await logout();
           setInitializing(false);
         }
       });
@@ -63,7 +64,7 @@ export default function App() {
     }
   }, [initializing, isLoading]);
 
-  const showLoading = (initializing || isLoading) && !forceRender;
+  const showLoading = (initializing || isLoading) && !currentUser && !forceRender;
   if (showLoading) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
