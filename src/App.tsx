@@ -29,9 +29,10 @@ export default function App() {
         if (session?.user && !loadedRef.current) {
           loadedRef.current = true;
           loadUserData(session.user.id);
-        } else if (event === "SIGNED_OUT") {
+        } else if (event === "SIGNED_OUT" || !session?.user) {
           loadedRef.current = false;
           logout();
+          setInitializing(false);
         }
       });
 

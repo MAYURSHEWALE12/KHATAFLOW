@@ -245,6 +245,13 @@ export const useKhataStore = create<KhataState>((set, get) => {
     },
 
     logout: async () => {
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {
+          console.error("Signout error:", err);
+        }
+      }
       set({
         currentUser: null,
         friends: [],
@@ -263,9 +270,6 @@ export const useKhataStore = create<KhataState>((set, get) => {
         // Clear Supabase auth session from storage
         const sbKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
         sbKeys.forEach(k => localStorage.removeItem(k));
-      }
-      if (isSupabaseConfigured && supabase) {
-        supabase.auth.signOut().catch(() => {});
       }
     },
 
