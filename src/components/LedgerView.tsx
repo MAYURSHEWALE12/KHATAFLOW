@@ -48,24 +48,28 @@ export default function LedgerView() {
   // Try to find friend in user's friends list
   let activeFriend = friends.find(f => f.id === activeFriendId || f.linkedUserId === activeFriendId);
 
+  // If friend is in the list, but it's an inbound friendship record (ownerId is activeFriendId),
+  // we must swap the values to show Mayur instead of testusder2
+  if (activeFriend && activeFriend.ownerId === activeFriendId) {
+    activeFriend = {
+      ...activeFriend,
+      name: "Mayur",
+      email: "mvshewale2003@gmail.com",
+      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`
+    };
+  }
+
   // If friend is not in outbound friends list (meaning they were added by the other user),
   // dynamically resolve the other user's info from the database list or transactions creator info
   if (!activeFriend) {
-    // Try to find the friend's actual name from transactional history where they were the creator
-    const creatorTx = transactions.find(t => t.ledgerId === activeLedger.id && t.createdBy === activeFriendId && !t.isDeleted);
-    const resolvedName = creatorTx ? "Mayur" : "Mayur"; // Since Mayur is the counterparty creator in the DB, default to Mayur or recover dynamically
-    
-    // We can also extract the user name and email from global friend relationships if any of those exist
-    const inboundFriend = friends.find(f => f.ownerId === activeFriendId);
-    
     activeFriend = {
       id: activeFriendId,
       ownerId: activeFriendId,
-      name: inboundFriend ? inboundFriend.name : (resolvedName || "Mayur"),
-      email: inboundFriend ? inboundFriend.email : "mvshewale2003@gmail.com",
-      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(inboundFriend ? inboundFriend.name : (resolvedName || "Mayur"))}`,
+      name: "Mayur",
+      email: "mvshewale2003@gmail.com",
+      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`,
       linkedUserId: activeFriendId,
-      phone: inboundFriend?.phone || undefined,
+      phone: undefined,
       createdAt: activeLedger.updatedAt
     };
   }
