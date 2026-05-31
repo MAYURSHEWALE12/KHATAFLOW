@@ -32,14 +32,18 @@ BEGIN
             UPDATE public.transactions SET created_by = p_user_id WHERE created_by = v_old_user_id;
             UPDATE public.notifications SET user_id = p_user_id WHERE user_id = v_old_user_id;
             DELETE FROM public.users WHERE id = v_old_user_id;
+            -- Guest row deleted; insert the real user row
+            INSERT INTO public.users (id, name, email, avatar_url, provider)
+            VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider);
+        ELSE
+            -- Same row: just update it
+            UPDATE public.users SET
+                name = COALESCE(NULLIF(p_name, ''), name),
+                avatar_url = COALESCE(p_avatar_url, avatar_url),
+                email = p_email,
+                provider = p_provider
+            WHERE id = p_user_id;
         END IF;
-        -- Update the existing row (whether migrated or same id)
-        UPDATE public.users SET
-            name = COALESCE(NULLIF(p_name, ''), name),
-            avatar_url = COALESCE(p_avatar_url, avatar_url),
-            email = p_email,
-            provider = p_provider
-        WHERE id = p_user_id;
     ELSE
         INSERT INTO public.users (id, name, email, avatar_url, provider)
         VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider);
@@ -66,13 +70,22 @@ BEGIN
             UPDATE public.transactions SET created_by = NEW.id WHERE created_by = v_old_user_id;
             UPDATE public.notifications SET user_id = NEW.id WHERE user_id = v_old_user_id;
             DELETE FROM public.users WHERE id = v_old_user_id;
+            INSERT INTO public.users (id, name, email, avatar_url, provider)
+            VALUES (
+                NEW.id,
+                COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+                NEW.email,
+                COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', NULL),
+                COALESCE(NEW.app_metadata ->> 'provider', 'email')
+            );
+        ELSE
+            UPDATE public.users SET
+                name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), name),
+                avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', avatar_url),
+                email = NEW.email,
+                provider = COALESCE(NEW.app_metadata ->> 'provider', 'email')
+            WHERE id = NEW.id;
         END IF;
-        UPDATE public.users SET
-            name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), name),
-            avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', avatar_url),
-            email = NEW.email,
-            provider = COALESCE(NEW.app_metadata ->> 'provider', 'email')
-        WHERE id = NEW.id;
     ELSE
         INSERT INTO public.users (id, name, email, avatar_url, provider)
         VALUES (
