@@ -9,7 +9,7 @@ import {
 export default function DashboardView() {
   const navigate = useNavigate();
   const { 
-    currentUser, friends, ledgers, notifications, 
+    currentUser, friends, ledgers, transactions, notifications, 
     logout, addFriend, markNotificationsRead, theme, toggleTheme
   } = useKhataStore();
 
@@ -63,6 +63,33 @@ export default function DashboardView() {
         (l.userA === friendId && l.userB === currentUser.id)
     );
   };
+
+  // Sort friends dynamically so that the one with the latest transaction (most recent timestamp) appears first
+  const sortedFriends = [...filteredFriends].sort((a, b) => {
+    const ledgerA = getFriendLedger(a);
+    const ledgerB = getFriendLedger(b);
+
+    let latestTxTimeA = 0;
+    if (ledgerA) {
+      const txsA = transactions.filter(t => t.ledgerId === ledgerA.id && !t.isDeleted);
+      if (txsA.length > 0) {
+        latestTxTimeA = Math.max(...txsA.map(t => new Date(t.createdAt).getTime()));
+      }
+    }
+
+    let latestTxTimeB = 0;
+    if (ledgerB) {
+      const txsB = transactions.filter(t => t.ledgerId === ledgerB.id && !t.isDeleted);
+      if (txsB.length > 0) {
+        latestTxTimeB = Math.max(...txsB.map(t => new Date(t.createdAt).getTime()));
+      }
+    }
+
+    const timeA = latestTxTimeA || (ledgerA ? new Date(ledgerA.updatedAt).getTime() : 0) || new Date(a.createdAt).getTime();
+    const timeB = latestTxTimeB || (ledgerB ? new Date(ledgerB.updatedAt).getTime() : 0) || new Date(b.createdAt).getTime();
+
+    return timeB - timeA;
+  });
 
   const handleFriendClick = async (friend: Friend) => {
     const ledger = getFriendLedger(friend);
@@ -266,7 +293,7 @@ export default function DashboardView() {
           </div>
 
           {/* Friends List */}
-          {filteredFriends.length === 0 ? (
+          {sortedFriends.length === 0 ? (
             <div className="py-16 text-center text-[#A1A1AA] border-2 border-dashed border-[#26272B] rounded-[4px] flex flex-col items-center justify-center gap-3">
               <Users size={32} className="text-neutral-700" />
               <div>
@@ -282,7 +309,7 @@ export default function DashboardView() {
             </div>
           ) : (
             <div className="divide-y divide-[#26272B]">
-              {filteredFriends.map((friend) => {
+              {sortedFriends.map((friend) => {
                 const ledger = getFriendLedger(friend);
                 const rawBalance = ledger ? ledger.balance : 0;
                 const balance = ledger 

@@ -168,6 +168,33 @@ export default function LedgerView() {
     );
   };
 
+  // Sort friends dynamically so that the one with the latest transaction (most recent timestamp) appears first
+  const sortedFriends = [...filteredFriends].sort((a, b) => {
+    const ledgerA = getFriendLedger(a);
+    const ledgerB = getFriendLedger(b);
+
+    let latestTxTimeA = 0;
+    if (ledgerA) {
+      const txsA = transactions.filter(t => t.ledgerId === ledgerA.id && !t.isDeleted);
+      if (txsA.length > 0) {
+        latestTxTimeA = Math.max(...txsA.map(t => new Date(t.createdAt).getTime()));
+      }
+    }
+
+    let latestTxTimeB = 0;
+    if (ledgerB) {
+      const txsB = transactions.filter(t => t.ledgerId === ledgerB.id && !t.isDeleted);
+      if (txsB.length > 0) {
+        latestTxTimeB = Math.max(...txsB.map(t => new Date(t.createdAt).getTime()));
+      }
+    }
+
+    const timeA = latestTxTimeA || (ledgerA ? new Date(ledgerA.updatedAt).getTime() : 0) || new Date(a.createdAt).getTime();
+    const timeB = latestTxTimeB || (ledgerB ? new Date(ledgerB.updatedAt).getTime() : 0) || new Date(b.createdAt).getTime();
+
+    return timeB - timeA;
+  });
+
   return (
     <div className="relative h-screen w-screen bg-background text-foreground flex font-sans print:bg-white print:text-black transition-colors duration-300 overflow-hidden">
       
@@ -206,12 +233,12 @@ export default function LedgerView() {
 
         {/* Sidebar Friends Rows */}
         <div className="flex-grow overflow-y-auto divide-y divide-border-color/40">
-          {filteredFriends.length === 0 ? (
+          {sortedFriends.length === 0 ? (
             <div className="p-6 text-center text-secondary-text text-xs font-medium">
               No active friendships found.
             </div>
           ) : (
-            filteredFriends.map((f) => {
+            sortedFriends.map((f) => {
               const friendLedger = getFriendLedger(f);
               const isSelected = friendLedger?.id === ledgerId;
               const rawBal = friendLedger ? friendLedger.balance : 0;
