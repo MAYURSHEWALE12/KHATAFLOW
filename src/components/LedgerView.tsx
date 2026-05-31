@@ -139,6 +139,14 @@ export default function LedgerView() {
     scrollToBottom("smooth");
   }, [transactions.length]);
 
+  // Fetch the other user's real profile (must be above ALL early returns — Rules of Hooks)
+  useEffect(() => {
+    const activeLedger = ledgers.find(l => l.id === ledgerId);
+    if (!currentUser || !activeLedger) return;
+    const friendId = activeLedger.userA === currentUser.id ? activeLedger.userB : activeLedger.userA;
+    if (friendId) fetchUserProfile(friendId);
+  }, [ledgerId, ledgers, currentUser]);
+
   if (!currentUser) return null;
 
   // Find active ledger
@@ -159,11 +167,6 @@ export default function LedgerView() {
   
   // Find active friend for timeline
   const activeFriendId = activeLedger.userA === currentUser.id ? activeLedger.userB : activeLedger.userA;
-
-  // Fetch the other user's real profile from Supabase (cached in store)
-  useEffect(() => {
-    if (activeFriendId) fetchUserProfile(activeFriendId);
-  }, [activeFriendId]);
 
   // Resolve the real name/avatar/email for the other user (from cache or fallback)
   const otherUserProfile = userProfiles[activeFriendId];
