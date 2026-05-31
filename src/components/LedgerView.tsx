@@ -11,7 +11,8 @@ export default function LedgerView() {
   const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, transactions, 
-    addTransaction, deleteTransaction, editTransaction, updateFriend, settleUp, theme, toggleTheme 
+    addTransaction, deleteTransaction, editTransaction, updateFriend, settleUp, theme, toggleTheme,
+    fetchUserProfile, userProfiles
   } = useKhataStore();
 
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
@@ -158,33 +159,42 @@ export default function LedgerView() {
   
   // Find active friend for timeline
   const activeFriendId = activeLedger.userA === currentUser.id ? activeLedger.userB : activeLedger.userA;
+
+  // Fetch the other user's real profile from Supabase (cached in store)
+  useEffect(() => {
+    if (activeFriendId) fetchUserProfile(activeFriendId);
+  }, [activeFriendId]);
+
+  // Resolve the real name/avatar/email for the other user (from cache or fallback)
+  const otherUserProfile = userProfiles[activeFriendId];
+  const otherUserName = otherUserProfile?.name ?? "User";
+  const otherUserEmail = otherUserProfile?.email ?? "";
+  const otherUserAvatar = otherUserProfile?.avatarUrl ?? `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(activeFriendId)}`;
   
   // Try to find friend in user's friends list
   let activeFriend = friends.find(f => f.id === activeFriendId || f.linkedUserId === activeFriendId);
 
-  // If friend is in the list, but it's an inbound friendship record (ownerId is activeFriendId),
-  // we must swap the values to show Mayur instead of testusder2
+  // If this is an inbound friendship record, swap name/email/avatar from the real user profile
   if (activeFriend && activeFriend.ownerId === activeFriendId) {
     activeFriend = {
       ...activeFriend,
-      name: "Mayur",
-      email: "mvshewale2003@gmail.com",
-      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`
+      name: otherUserName,
+      email: otherUserEmail,
+      avatarUrl: otherUserAvatar,
     };
   }
 
-  // If friend is not in outbound friends list (meaning they were added by the other user),
-  // dynamically resolve the other user's info from the database list or transactions creator info
+  // If friend is not found in any outbound list, build a synthetic record from the resolved profile
   if (!activeFriend) {
     activeFriend = {
       id: activeFriendId,
       ownerId: activeFriendId,
-      name: "Mayur",
-      email: "mvshewale2003@gmail.com",
-      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`,
+      name: otherUserName,
+      email: otherUserEmail,
+      avatarUrl: otherUserAvatar,
       linkedUserId: activeFriendId,
       phone: undefined,
-      createdAt: activeLedger.updatedAt
+      createdAt: activeLedger.updatedAt,
     };
   }
 
@@ -360,13 +370,17 @@ export default function LedgerView() {
                 ? (friendLedger.userA === currentUser.id ? rawBal : -rawBal)
                 : 0;
 
-              // Determine displayName and displayEmail dynamically for the sidebar list
-              // If the current user is NOT the owner of the friendship record (inbound relationship),
-              // we must show the owner's info (Mayur) to testuser instead of f.name (which represents testuser's own name)
+              // Resolve display info: if I'm not the owner, show other user's real profile
               const isOwnerMe = f.ownerId === currentUser.id;
-              const displayName = isOwnerMe ? f.name : "Mayur";
-              const displayEmail = isOwnerMe ? f.email : "mvshewale2003@gmail.com";
-              const displayAvatar = isOwnerMe ? f.avatarUrl : `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`;
+              const otherProfile = isOwnerMe ? null : userProfiles[f.ownerId];
+              const displayName = isOwnerMe ? f.name : (otherProfile?.name ?? f.name);
+              const displayEmail = isOwnerMe ? f.email : (otherProfile?.email ?? f.email);
+              const displayAvatar = isOwnerMe ? f.avatarUrl : (otherProfile?.avatarUrl ?? `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(f.ownerId)}`);
+
+              // Fetch the owner's profile if we haven't yet
+              if (!isOwnerMe && !userProfiles[f.ownerId]) {
+                fetchUserProfile(f.ownerId);
+              }
 
               return (
                 <div

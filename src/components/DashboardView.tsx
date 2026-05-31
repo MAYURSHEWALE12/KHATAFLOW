@@ -11,7 +11,7 @@ export default function DashboardView() {
   const { 
     currentUser, friends, ledgers, transactions, notifications, 
     logout, addFriend, markNotificationsRead, theme, toggleTheme,
-    updateProfile
+    updateProfile, fetchUserProfile, userProfiles
   } = useKhataStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -337,13 +337,17 @@ export default function DashboardView() {
                   ? (ledger.userA === currentUser.id ? rawBalance : -rawBalance)
                   : 0;
                 
-                // Determine displayName, displayEmail and displayAvatar dynamically for the dashboard list
-                // If the current user is NOT the owner of the friendship record (inbound relationship),
-                // we must show the owner's info (Mayur) to testuser instead of friend.name (which represents testuser's own name)
+                // Resolve display info: if I'm not the owner, show the real profile of the owner (the other user)
                 const isOwnerMe = friend.ownerId === currentUser.id;
-                const displayName = isOwnerMe ? friend.name : "Mayur";
-                const displayEmail = isOwnerMe ? friend.email : "mvshewale2003@gmail.com";
-                const displayAvatar = isOwnerMe ? friend.avatarUrl : `https://api.dicebear.com/7.x/adventurer/svg?seed=Mayur`;
+                const otherProfile = isOwnerMe ? null : userProfiles[friend.ownerId];
+                const displayName = isOwnerMe ? friend.name : (otherProfile?.name ?? friend.name);
+                const displayEmail = isOwnerMe ? friend.email : (otherProfile?.email ?? friend.email);
+                const displayAvatar = isOwnerMe ? friend.avatarUrl : (otherProfile?.avatarUrl ?? `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(friend.ownerId)}`);
+
+                // Lazily fetch the owner's real profile if we don't have it yet
+                if (!isOwnerMe && !userProfiles[friend.ownerId]) {
+                  fetchUserProfile(friend.ownerId);
+                }
 
                 return (
                   <div 

@@ -55,6 +55,7 @@ interface KhataState {
   ledgers: Ledger[];
   transactions: Transaction[];
   notifications: Notification[];
+  userProfiles: Record<string, { name: string; avatarUrl: string; email: string }>;
   theme: "dark" | "light";
   isLoading: boolean;
 
@@ -66,6 +67,7 @@ interface KhataState {
   logout: () => Promise<void>;
 
   loadUserData: (userId: string) => Promise<void>;
+  fetchUserProfile: (userId: string) => Promise<void>;
   addFriend: (name: string, email: string, phone?: string) => Promise<Friend>;
   addTransaction: (ledgerId: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -158,6 +160,7 @@ export const useKhataStore = create<KhataState>((set, get) => {
     ledgers: [],
     transactions: [],
     notifications: [],
+    userProfiles: {},
     theme: initialTheme,
     isLoading: false,
 
@@ -372,6 +375,32 @@ export const useKhataStore = create<KhataState>((set, get) => {
         notifications,
         isLoading: false,
       });
+    },
+
+    fetchUserProfile: async (userId: string) => {
+      // Already cached — skip
+      if (get().userProfiles[userId]) return;
+
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase
+          .from("users")
+          .select("id, name, email, avatar_url")
+          .eq("id", userId)
+          .single<{ id: string; name: string; email: string; avatar_url: string | null }>();
+
+        if (data) {
+          set((state) => ({
+            userProfiles: {
+              ...state.userProfiles,
+              [userId]: {
+                name: data.name,
+                email: data.email,
+                avatarUrl: data.avatar_url || getAvatarUrl(data.name),
+              },
+            },
+          }));
+        }
+      }
     },
 
     addFriend: async (name: string, email: string, phone?: string) => {
