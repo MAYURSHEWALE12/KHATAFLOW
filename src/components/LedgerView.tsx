@@ -11,7 +11,7 @@ export default function LedgerView() {
   const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, transactions, 
-    addTransaction, deleteTransaction, editTransaction, settleUp, theme, toggleTheme 
+    addTransaction, deleteTransaction, editTransaction, updateFriend, settleUp, theme, toggleTheme 
   } = useKhataStore();
 
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
@@ -34,6 +34,40 @@ export default function LedgerView() {
 
   // WhatsApp Custom Message States
   const [customNote, setCustomNote] = useState("");
+
+  // Edit Friend Profile Form
+  const [isEditFriendOpen, setIsEditFriendOpen] = useState(false);
+  const [editFriendName, setEditFriendName] = useState("");
+  const [editFriendPhone, setEditFriendPhone] = useState("");
+  const [editFriendError, setEditFriendError] = useState("");
+
+  const handleEditFriendClick = () => {
+    if (activeFriend) {
+      setEditFriendName(activeFriend.name);
+      setEditFriendPhone(activeFriend.phone || "");
+      setEditFriendError("");
+      setIsEditFriendOpen(true);
+    }
+  };
+
+  const handleEditFriendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFriendError("");
+
+    if (!editFriendName) {
+      setEditFriendError("Please enter the friend's name.");
+      return;
+    }
+
+    if (activeFriend) {
+      try {
+        await updateFriend(activeFriend.id, editFriendName, editFriendPhone);
+        setIsEditFriendOpen(false);
+      } catch (err) {
+        setEditFriendError(err instanceof Error ? err.message : "Failed to update profile");
+      }
+    }
+  };
 
   useEffect(() => {
     if (isShareReminderOpen && currentUser && ledgers) {
@@ -391,7 +425,11 @@ export default function LedgerView() {
               <ArrowLeft size={15} />
             </button>
             
-            <div className="flex items-center gap-2.5">
+            <div 
+              onClick={handleEditFriendClick}
+              className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-all"
+              title="Click to Edit Friend Details"
+            >
               <img 
                 src={activeFriend.avatarUrl} 
                 alt={activeFriend.name} 
@@ -950,6 +988,80 @@ export default function LedgerView() {
                   className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all"
                 >
                   Save Entry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Modal: Edit Friend Profile */}
+      {isEditFriendOpen && (
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
+          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+            <button 
+              onClick={() => setIsEditFriendOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-card-bg flex items-center justify-center text-secondary-text cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-5">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-1.5">
+                <Pencil size={18} className="text-[#10B981]" /> Edit Friend Details
+              </h3>
+              <p className="text-xs text-secondary-text mt-1 font-medium">Update {activeFriend.name}'s profile details. These changes sync mutually in real-time.</p>
+            </div>
+
+            {editFriendError && (
+              <div className="mb-4 flex items-center gap-2 p-3 rounded-[4px] bg-error-text/10 border border-error-text/20 text-error-text text-xs">
+                <ShieldAlert size={16} />
+                <span>{editFriendError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleEditFriendSubmit} className="space-y-4">
+              {/* Friend's Name */}
+              <div>
+                <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Friend's Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rahul Kumar"
+                  value={editFriendName}
+                  onChange={(e) => setEditFriendName(e.target.value)}
+                  className="w-full bg-background border border-border-color rounded-[4px] py-3 px-4 text-xs text-foreground placeholder-secondary-text/45 focus:outline-none focus:border-[#10B981] transition-all"
+                  required
+                />
+              </div>
+
+              {/* Friend's Phone */}
+              <div>
+                <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Friend's Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  placeholder="e.g. +919876543210"
+                  value={editFriendPhone}
+                  onChange={(e) => setEditFriendPhone(e.target.value)}
+                  className="w-full bg-background border border-border-color rounded-[4px] py-3 px-4 text-xs text-foreground placeholder-secondary-text/45 focus:outline-none focus:border-[#10B981] transition-all"
+                />
+                <span className="block text-[9px] text-secondary-text mt-1.5 italic font-medium">
+                  💬 Phone number is used to route direct settlement messages to WhatsApp!
+                </span>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditFriendOpen(false)}
+                  className="px-4 py-2.5 rounded-[4px] border border-border-color hover:bg-card-bg text-xs font-semibold cursor-pointer text-secondary-text transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all"
+                >
+                  Save Profile
                 </button>
               </div>
             </form>

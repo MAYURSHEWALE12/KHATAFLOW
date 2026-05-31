@@ -70,6 +70,7 @@ interface KhataState {
   addTransaction: (ledgerId: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   editTransaction: (id: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
+  updateFriend: (id: string, name: string, phone?: string) => Promise<void>;
   settleUp: (ledgerId: string) => Promise<void>;
   ensureFriendLedger: (friendId: string) => Promise<string | null>;
   markNotificationsRead: () => Promise<void>;
@@ -437,6 +438,41 @@ export const useKhataStore = create<KhataState>((set, get) => {
       set({ ledgers: updatedLedgers });
 
       return newFriend;
+    },
+
+    updateFriend: async (id: string, name: string, phone?: string) => {
+      const { currentUser } = get();
+      const userId = currentUser?.id;
+      if (!userId) throw new Error("No user logged in");
+
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase
+          .from("friend_relationships")
+          .update({
+            friend_name: name.trim(),
+            phone: phone?.trim() || null,
+          })
+          .eq("id", id);
+
+        if (error) throw new Error(error.message);
+
+        // Refresh state
+        await get().loadUserData(userId);
+        return;
+      }
+
+      // Offline implementation
+      const existingFriends = loadStored<Friend[]>("khata_friends", []);
+      const updatedFriends = existingFriends.map((f) =>
+        f.id === id ? { ...f, name: name.trim(), phone: phone?.trim() || undefined } : f
+      );
+      persist("khata_friends", updatedFriends);
+
+      set({
+        friends: get().friends.map((f) =>
+          f.id === id ? { ...f, name: name.trim(), phone: phone?.trim() || undefined } : f
+        ),
+      });
     },
 
     addTransaction: async (ledgerId: string, type: Transaction["type"], amount: number, description: string) => {
