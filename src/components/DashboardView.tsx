@@ -29,6 +29,7 @@ export default function DashboardView() {
   const [profileName, setProfileName] = useState("");
   const [profileError, setProfileError] = useState("");
   const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
 
   if (!currentUser) return null;
 
@@ -189,6 +190,11 @@ export default function DashboardView() {
             onClick={() => {
               setProfileName(currentUser.name);
               setProfileError("");
+              if (currentUser.avatarUrl && !currentUser.avatarUrl.includes("api.dicebear.com")) {
+                setCustomAvatar(currentUser.avatarUrl);
+              } else {
+                setCustomAvatar(null);
+              }
               setIsProfileModalOpen(true);
             }}
             className="flex items-center gap-2.5 px-3 py-1.5 rounded-[4px] border border-[#26272B] bg-[#151618]/30 hover:bg-[#26272B]/60 hover:border-[#10B981]/50 cursor-pointer transition-all duration-200 group text-[#F5F5F5] outline-none"
@@ -534,7 +540,7 @@ export default function DashboardView() {
                 <Sparkles size={18} className="text-[#10B981]" /> Edit Profile
               </h3>
               <p className="text-xs text-[#A1A1AA] mt-1 font-medium font-sans">
-                Update your display name. Your dynamic adventurer avatar seed will regenerate instantly!
+                Update your photo and display name.
               </p>
             </div>
 
@@ -545,21 +551,68 @@ export default function DashboardView() {
               </div>
             )}
 
-            <div className="flex flex-col items-center gap-4 mb-6 p-4 rounded-[4px] border border-[#26272B] bg-[#151618]/30">
+            {/* Avatar Upload Section */}
+            <div className="flex flex-col items-center gap-3 mb-6 p-4 rounded-[4px] border border-[#26272B] bg-[#151618]/30">
               <div className="relative group">
-                <img 
-                  src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(profileName.trim() || currentUser.name)}`} 
-                  alt="Avatar Preview" 
-                  className="w-20 h-20 rounded-[4px] border border-[#26272B] bg-[#0A0A0B] shadow-inner"
+                <img
+                  src={customAvatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(profileName.trim() || currentUser.name)}`}
+                  alt="Avatar Preview"
+                  className="w-20 h-20 rounded-full border-2 border-[#26272B] group-hover:border-[#10B981]/60 bg-[#0A0A0B] shadow-inner object-cover transition-colors"
                 />
-                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded bg-[#10B981]/10 border border-[#10B981]/30 text-[8px] text-[#10B981] font-bold">
-                  LIVE PREVIEW
-                </span>
+                {/* Upload overlay trigger */}
+                <label
+                  htmlFor="profile-photo-upload"
+                  className="absolute inset-0 rounded-full bg-[#0A0A0B]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity"
+                  title="Upload photo"
+                >
+                  <span className="text-[10px] text-[#10B981] font-bold text-center leading-tight">📷<br/>Upload</span>
+                </label>
+                <input
+                  id="profile-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={isProfileSaving}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      setProfileError("Photo must be under 2MB.");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      setCustomAvatar(ev.target?.result as string);
+                      setProfileError("");
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
               </div>
               <div className="text-center">
                 <p className="text-xs font-bold text-[#F5F5F5]">{profileName.trim() || currentUser.name}</p>
                 <p className="text-[10px] text-[#A1A1AA] mt-0.5">{currentUser.email}</p>
               </div>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="profile-photo-upload"
+                  className="text-[10px] font-bold text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-[4px] cursor-pointer hover:bg-[#10B981]/10 transition-colors"
+                >
+                  📷 Change Photo
+                </label>
+                {customAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomAvatar(null)}
+                    className="text-[10px] font-bold text-[#EF4444] border border-[#EF4444]/30 px-3 py-1 rounded-[4px] cursor-pointer hover:bg-[#EF4444]/10 transition-colors"
+                  >
+                    ✕ Remove
+                  </button>
+                )}
+              </div>
+              {!customAvatar && (
+                <p className="text-[9px] text-[#A1A1AA]/60 italic">Avatar auto-generates from your name if no photo is set</p>
+              )}
             </div>
 
             <form onSubmit={async (e) => {
@@ -571,7 +624,7 @@ export default function DashboardView() {
               }
               setIsProfileSaving(true);
               try {
-                await updateProfile(profileName);
+                await updateProfile(profileName, customAvatar || undefined);
                 setIsProfileModalOpen(false);
               } catch (err) {
                 setProfileError(err instanceof Error ? err.message : "Failed to update profile.");

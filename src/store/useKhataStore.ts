@@ -71,7 +71,7 @@ interface KhataState {
   deleteTransaction: (id: string) => Promise<void>;
   editTransaction: (id: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   updateFriend: (id: string, name: string, phone?: string) => Promise<void>;
-  updateProfile: (name: string) => Promise<void>;
+  updateProfile: (name: string, avatarUrl?: string) => Promise<void>;
   settleUp: (ledgerId: string) => Promise<void>;
   ensureFriendLedger: (friendId: string) => Promise<string | null>;
   markNotificationsRead: () => Promise<void>;
@@ -740,20 +740,20 @@ export const useKhataStore = create<KhataState>((set, get) => {
       await get().addTransaction(ledgerId, type, amount, "Settled entire outstanding balance");
     },
 
-    updateProfile: async (name: string) => {
+    updateProfile: async (name: string, avatarUrl?: string) => {
       const { currentUser } = get();
       const userId = currentUser?.id;
       if (!userId) throw new Error("No user logged in");
 
       const trimmedName = name.trim();
-      const newAvatarUrl = getAvatarUrl(trimmedName);
+      const finalAvatarUrl = avatarUrl || getAvatarUrl(trimmedName);
 
       if (isSupabaseConfigured && supabase) {
         const { error } = await supabase
           .from("users")
           .update({
             name: trimmedName,
-            avatar_url: newAvatarUrl,
+            avatar_url: finalAvatarUrl,
           })
           .eq("id", userId);
 
@@ -767,7 +767,7 @@ export const useKhataStore = create<KhataState>((set, get) => {
       // Offline implementation
       const storedUser = loadStored<User | null>("khata_user", null);
       if (storedUser) {
-        const updatedUser = { ...storedUser, name: trimmedName, avatarUrl: newAvatarUrl };
+        const updatedUser = { ...storedUser, name: trimmedName, avatarUrl: finalAvatarUrl };
         persist("khata_user", updatedUser);
         set({ currentUser: updatedUser });
       }
