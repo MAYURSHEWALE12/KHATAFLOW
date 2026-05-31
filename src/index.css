@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #F5F5F5;
+  --sidebar: #0A0A0A;
+  --card: #121212;
+  --border: rgba(255, 255, 255, 0.07);
+  --secondary: #A1A1AA;
+  --success: #10B981;
+  --error: #EF4444;
+  --accent: #FFFFFF;
+}
+
+body.light-theme {
+  --background: #FAFAFA;
+  --foreground: #090A0B;
+  --sidebar: #FFFFFF;
+  --card: #FFFFFF;
+  --border: #E4E4E7;
+  --secondary: #71717A;
+  --success: #10B981;
+  --error: #EF4444;
+  --accent: #090A0B;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar: var(--sidebar);
+  --color-card-bg: var(--card);
+  --color-border-color: var(--border);
+  --color-secondary-text: var(--secondary);
+  --color-success-text: var(--success);
+  --color-error-text: var(--error);
+  --color-accent-text: var(--accent);
+}
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom Panning Background Cyber-Dot Grid Grid */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 0);
+  background-size: 24px 24px;
+  animation: cyberDrift 25s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes cyberDrift {
+  from { background-position: 0 0; }
+  to { background-position: 48px 48px; }
+}
+
+.font-mono, .mono, [class*="font-mono"] {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Display font override for headings */
+h1, h2, h3, .font-display, [class*="font-display"] {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Custom Scrollbar for modern clinical look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Premium frosted Glassmorphism panel styling */
+.glass {
+  background: rgba(10, 10, 10, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.6) !important;
+  border-radius: 4px !important;
+}
+
+/* CLINICAL SEMANTIC OBSIDIAN COLOR OVERRIDES FOR ARBITRARY CLASSES */
+.bg-\[\#0a0a0b\], .bg-\[\#0A0A0B\] {
+  background-color: var(--background) !important;
+}
+.bg-\[\#111214\], .bg-\[\#111214\]\/80, .bg-\[\#111214\]\/40 {
+  background-color: var(--sidebar) !important;
+}
+.bg-\[\#151618\], .bg-\[\#151618\]\/65, .bg-\[\#151618\]\/60, .bg-\[\#151618\]\/30, .bg-\[\#151618\]\/50 {
+  background-color: var(--card) !important;
+}
+.border-\[\#26272b\], .border-\[\#26272B\], .border-\[\#26272b\]\/70, .border-\[\#26272B\]\/70, .border-\[\#26272b\]\/30, .border-\[\#26272b\]\/20, .border-\[\#26272b\]\/40, .border-\[\#26272b\]\/25 {
+  border-color: var(--border) !important;
+}
+.text-\[\#f5f5f5\], .text-\[\#F5F5F5\] {
+  color: var(--foreground) !important;
+}
+.text-\[\#a1a1aa\], .text-\[\#A1A1AA\], .text-\[\#a1a1aa\]\/70, .text-\[\#a1a1aa\]\/45, .text-\[\#a1a1aa\]\/50 {
+  color: var(--secondary) !important;
+}
+.hover\:bg-\[\#151618\]:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+.hover\:bg-\[\#26272b\]:hover, .hover\:bg-\[\#26272B\]:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.hover\:border-\[\#10b981\]\/40:hover, .hover\:border-\[\#10B981\]\/40:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Symmetrical highlight color states (only where needed) */
+.bg-\[\#10b981\]\/15, .bg-\[\#10B981\]\/15 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+.text-\[\#10b981\], .text-\[\#10B981\] {
+  color: var(--success) !important;
+}
+.bg-\[\#ef4444\]\/15, .bg-\[\#EF4444\]\/15 {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+.text-\[\#ef4444\], .text-\[\#EF4444\] {
+  color: var(--error) !important;
+}
+
+/* Frosted Modal Backdrop Overlay */
+.fixed.inset-0.bg-\[\#0A0A0B\]\/85, .fixed.inset-0.bg-\[\#0a0a0b\]\/85,
+.fixed.inset-0.bg-\[\#0A0A0B\]\/80, .fixed.inset-0.bg-\[\#0a0a0b\]\/80 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Crisp White Primary Action Button Styles (Matches Reference Image) */
+.bg-\[\#10B981\] {
+  background-color: var(--accent) !important;
+  color: #050505 !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+}
+.bg-\[\#10B981\]:hover {
+  background-color: #E5E5E5 !important;
+  transform: none !important;
+}
+.text-\[\#0A0A0B\] {
+  color: #050505 !important;
+}
+.shadow-\[\#10B981\]\/15 {
+  box-shadow: none !important;
+}
+.bg-\[\#10B981\]\/10 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+}
+.hover\:bg-\[\#059669\]:hover {
+  background-color: #E5E5E5 !important;
+}
+
+/* We preserve subtle fade animations */
+.animate-slide-in {
+  animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* LIGHT THEME EXPLICIT WORKSPACE OVERRIDES */
+body.light-theme::before {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 0) !important;
+}
+
+body.light-theme .glass {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-theme .bg-\[\#10b981\], body.light-theme .bg-\[\#10B981\] {
+  background-color: var(--accent) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+body.light-theme .bg-\[\#10b981\]:hover, body.light-theme .bg-\[\#10B981\]:hover {
+  background-color: #26272b !important;
+  background-color: #26272B !important;
+}
+
+body.light-theme .text-\[\#0a0a0b\], body.light-theme .text-\[\#0A0A0B\] {
+  color: #FFFFFF !important;
+}
+
+body.light-theme .shadow-\[\#10b981\]\/15, body.light-theme .shadow-\[\#10B981\]\/15 {
+  box-shadow: none !important;
+}
+
+body.light-theme .bg-\[\#10b981\]\/10, body.light-theme .bg-\[\#10B981\]\/10 {
+  background-color: #F3F4F6 !important;
+  border-color: var(--border) !important;
+}
+
+body.light-theme .hover\:bg-\[\#059669\]:hover {
+  background-color: #26272b !important;
+  background-color: #26272B !important;
+}
+
+body.light-theme .bg-\[\#10b981\]\/15, body.light-theme .bg-\[\#10B981\]\/15 {
+  background-color: rgba(5, 150, 105, 0.1) !important;
+}
+
+body.light-theme .bg-\[\#ef4444\]\/15, body.light-theme .bg-\[\#EF4444\]\/15 {
+  background-color: rgba(220, 38, 38, 0.1) !important;
+}
+
+body.light-theme .hover\:bg-\[\#151618\]:hover {
+  background-color: #F9FAFB !important;
+}
+
+body.light-theme .hover\:bg-\[\#26272b\]:hover, body.light-theme .hover\:bg-\[\#26272B\]:hover {
+  background-color: #F3F4F6 !important;
+}
