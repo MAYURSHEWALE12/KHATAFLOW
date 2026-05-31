@@ -376,23 +376,7 @@ export const useKhataStore = create<KhataState>((set, get) => {
 
         if (error) throw new Error(error.message);
 
-        let newFriend = toFriend(data);
-
-        if (!data.linked_user_id) {
-          const guestUserId = crypto.randomUUID();
-          await supabase.rpc("ensure_user_profile", {
-            p_user_id: guestUserId,
-            p_name: name.trim(),
-            p_email: email.trim().toLowerCase(),
-            p_avatar_url: getAvatarUrl(name.trim()),
-            p_provider: "invited",
-          });
-          await supabase.from("friend_relationships").update({ linked_user_id: guestUserId }).eq("id", data.id);
-          newFriend = { ...newFriend, linkedUserId: guestUserId, id: data.id };
-          const ua = userId < guestUserId ? userId : guestUserId;
-          const ub = userId < guestUserId ? guestUserId : userId;
-          await supabase.from("ledgers").insert({ user_a: ua, user_b: ub, balance: 0 }).select().single();
-        }
+        const newFriend = toFriend(data);
 
         set({ friends: [...get().friends, newFriend] });
 
