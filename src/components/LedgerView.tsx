@@ -294,11 +294,14 @@ export default function LedgerView() {
 
   const getWhatsAppReminderLink = () => {
     const text = getWhatsAppMessage();
+    const encoded = encodeURIComponent(text);
     const cleanPhone = activeFriend.phone ? activeFriend.phone.replace(/[^0-9]/g, "") : "";
     if (cleanPhone) {
-      return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+      // wa.me with phone — works on mobile app & web both
+      return `https://wa.me/${cleanPhone}?text=${encoded}`;
     }
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    // No phone — opens WhatsApp with pre-filled text, user picks contact
+    return `https://wa.me/?text=${encoded}`;
   };
 
   const handlePrint = () => {
