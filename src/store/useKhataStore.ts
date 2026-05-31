@@ -255,6 +255,14 @@ export const useKhataStore = create<KhataState>((set, get) => {
       });
       if (isClient) {
         localStorage.removeItem("khata_user");
+        localStorage.removeItem("khata_friends");
+        localStorage.removeItem("khata_ledgers");
+        localStorage.removeItem("khata_transactions");
+        localStorage.removeItem("khata_notifs");
+        localStorage.removeItem("khata_registered");
+        // Clear Supabase auth session from storage
+        const sbKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
+        sbKeys.forEach(k => localStorage.removeItem(k));
       }
       if (isSupabaseConfigured && supabase) {
         supabase.auth.signOut().catch(() => {});
