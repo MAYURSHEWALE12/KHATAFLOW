@@ -111,6 +111,27 @@ BEGIN
 
     -- If an old row exists and is different from the new real user ID, migrate it
     IF v_old_id IS NOT NULL AND v_old_id <> NEW.id THEN
+        -- Step A: Free up the email unique constraint on the old row by changing its email
+        UPDATE public.users 
+        SET email = id::text || '@temp-migration.placeholder' 
+        WHERE id = v_old_id;
+
+        -- Step B: Insert/upsert the new user row so it exists in public.users for foreign key checks
+        INSERT INTO public.users (id, name, email, avatar_url, provider)
+        VALUES (
+            NEW.id,
+            COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+            NEW.email,
+            COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', NULL),
+            COALESCE(NEW.app_metadata ->> 'provider', 'email')
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), users.name),
+            email = NEW.email,
+            avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', users.avatar_url),
+            provider = COALESCE(NEW.app_metadata ->> 'provider', 'email');
+
+        -- Step C: Migrate child references to the newly inserted real user profile
         -- 1. Migrate friend relationships
         UPDATE public.friend_relationships SET owner_id = NEW.id WHERE owner_id = v_old_id;
         UPDATE public.friend_relationships SET linked_user_id = NEW.id WHERE linked_user_id = v_old_id;
@@ -149,22 +170,22 @@ BEGIN
         
         -- 5. Delete the old user row
         DELETE FROM public.users WHERE id = v_old_id;
+    ELSE
+        -- If no migration needed, just upsert the real user row
+        INSERT INTO public.users (id, name, email, avatar_url, provider)
+        VALUES (
+            NEW.id,
+            COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+            NEW.email,
+            COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', NULL),
+            COALESCE(NEW.app_metadata ->> 'provider', 'email')
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), users.name),
+            email = NEW.email,
+            avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', users.avatar_url),
+            provider = COALESCE(NEW.app_metadata ->> 'provider', 'email');
     END IF;
-
-    -- Upsert the real user row
-    INSERT INTO public.users (id, name, email, avatar_url, provider)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
-        NEW.email,
-        COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', NULL),
-        COALESCE(NEW.app_metadata ->> 'provider', 'email')
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        name = COALESCE(NULLIF(COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)), ''), users.name),
-        email = NEW.email,
-        avatar_url = COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', NEW.raw_user_meta_data ->> 'avatarUrl', users.avatar_url),
-        provider = COALESCE(NEW.app_metadata ->> 'provider', 'email');
 
     UPDATE public.friend_relationships
     SET linked_user_id = NEW.id
@@ -467,6 +488,21 @@ BEGIN
 
     -- If an old row exists and is different from the real user ID, migrate it
     IF v_old_id IS NOT NULL AND v_old_id <> p_user_id THEN
+        -- Step A: Free up the email unique constraint on the old row by changing its email
+        UPDATE public.users 
+        SET email = id::text || '@temp-migration.placeholder' 
+        WHERE id = v_old_id;
+
+        -- Step B: Insert/upsert the new user row so it exists in public.users for foreign key checks
+        INSERT INTO public.users (id, name, email, avatar_url, provider)
+        VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider)
+        ON CONFLICT (id) DO UPDATE SET
+            name = COALESCE(NULLIF(p_name, ''), users.name),
+            email = p_email,
+            avatar_url = COALESCE(p_avatar_url, users.avatar_url),
+            provider = p_provider;
+
+        -- Step C: Migrate child references to the newly inserted real user profile
         -- 1. Migrate friend relationships
         UPDATE public.friend_relationships SET owner_id = p_user_id WHERE owner_id = v_old_id;
         UPDATE public.friend_relationships SET linked_user_id = p_user_id WHERE linked_user_id = v_old_id;
@@ -505,15 +541,15 @@ BEGIN
         
         -- 5. Delete the old user row
         DELETE FROM public.users WHERE id = v_old_id;
+    ELSE
+        -- If no migration needed, just upsert the real user row
+        INSERT INTO public.users (id, name, email, avatar_url, provider)
+        VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider)
+        ON CONFLICT (id) DO UPDATE SET
+            name = COALESCE(NULLIF(p_name, ''), users.name),
+            email = p_email,
+            avatar_url = COALESCE(p_avatar_url, users.avatar_url),
+            provider = p_provider;
     END IF;
-
-    -- Upsert the real user row
-    INSERT INTO public.users (id, name, email, avatar_url, provider)
-    VALUES (p_user_id, p_name, p_email, p_avatar_url, p_provider)
-    ON CONFLICT (id) DO UPDATE SET
-        name = COALESCE(NULLIF(p_name, ''), users.name),
-        email = p_email,
-        avatar_url = COALESCE(p_avatar_url, users.avatar_url),
-        provider = p_provider;
 END;
 $$;

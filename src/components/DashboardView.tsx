@@ -46,9 +46,10 @@ export default function DashboardView() {
   const netBalance = totalLent - totalBorrowed;
 
   // Filter Friends
+  // Mutually show both friends added by this user, and friends added by others that link to this user
   const filteredFriends = friends.filter(
     (friend) =>
-      friend.ownerId === currentUser.id &&
+      (friend.ownerId === currentUser.id || friend.linkedUserId === currentUser.id) &&
       (friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       friend.email.toLowerCase().includes(searchQuery.toLowerCase()))
   );
