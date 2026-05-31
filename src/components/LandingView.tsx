@@ -249,19 +249,6 @@ export default function LandingView() {
           <span className="font-semibold text-secondary-text">Track Money. Stay Friends.</span>
         </div>
         <p className="text-[9px] text-neutral-600 font-medium">© {new Date().getFullYear()} KhataFlow. Built for personal connections.</p>
-        
-        {/* Reset Database CTA */}
-        <button
-          onClick={() => {
-            if (confirm("Are you sure you want to completely clear the entire mock database? This will delete all custom registered users, ledgers, transactions, and friends, and reset the app.")) {
-              localStorage.clear();
-              window.location.reload();
-            }
-          }}
-          className="mt-2 text-[8px] font-bold text-[#EF4444] border border-[#EF4444]/20 hover:border-[#EF4444] hover:bg-[#EF4444]/10 px-2 py-0.5 rounded-[3px] cursor-pointer transition-all uppercase tracking-wider"
-        >
-          Reset Local Database
-        </button>
       </footer>
 
     </div>
