@@ -69,6 +69,7 @@ interface KhataState {
   addFriend: (name: string, email: string, phone?: string) => Promise<Friend>;
   addTransaction: (ledgerId: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
+  editTransaction: (id: string, type: Transaction["type"], amount: number, description: string) => Promise<void>;
   settleUp: (ledgerId: string) => Promise<void>;
   ensureFriendLedger: (friendId: string) => Promise<string | null>;
   markNotificationsRead: () => Promise<void>;
@@ -564,6 +565,99 @@ export const useKhataStore = create<KhataState>((set, get) => {
         persist("khata_ledgers", updatedLedgers);
         set({ ledgers: updatedLedgers });
       }
+    },
+
+    editTransaction: async (id: string, type: Transaction["type"], amount: number, description: string) => {
+      const tx = get().transactions.find((t) => t.id === id);
+      if (!tx || tx.isDeleted) return;
+
+      const { ledgers } = get();
+      const targetLedger = ledgers.find((l) => l.id === tx.ledgerId);
+      if (!targetLedger) return;
+
+      const isUserA = tx.createdBy === targetLedger.userA;
+
+      // 1. Reverse the old transaction's financial effect
+      let reverseDiff = 0;
+      if (tx.type === "credit_given") {
+        reverseDiff = isUserA ? -tx.amount : tx.amount;
+      } else if (tx.type === "payment_received" || tx.type === "settlement") {
+        reverseDiff = isUserA ? tx.amount : -tx.amount;
+      } else if (tx.type === "expense") {
+        reverseDiff = isUserA ? -(tx.amount / 2) : tx.amount / 2;
+      } else if (tx.type === "adjustment") {
+        reverseDiff = isUserA ? -tx.amount : tx.amount;
+      } else if (tx.type === "refund") {
+        reverseDiff = isUserA ? tx.amount : -tx.amount;
+      }
+
+      // 2. Apply the new transaction's financial effect
+      let applyDiff = 0;
+      if (type === "credit_given") {
+        applyDiff = isUserA ? amount : -amount;
+      } else if (type === "payment_received" || type === "settlement") {
+        applyDiff = isUserA ? -amount : amount;
+      } else if (type === "expense") {
+        applyDiff = isUserA ? amount / 2 : -(amount / 2);
+      } else if (type === "adjustment") {
+        applyDiff = isUserA ? amount : -amount;
+      } else if (type === "refund") {
+        applyDiff = isUserA ? -amount : amount;
+      }
+
+      const balanceDiff = reverseDiff + applyDiff;
+
+      if (isSupabaseConfigured && supabase) {
+        // Update transaction in Supabase
+        const { error: txError } = await supabase
+          .from("transactions")
+          .update({
+            type,
+            amount,
+            description: description.trim(),
+          })
+          .eq("id", id);
+        if (txError) throw new Error(txError.message);
+
+        // Update ledger in Supabase
+        const { error: ledgerError } = await supabase
+          .from("ledgers")
+          .update({
+            balance: targetLedger.balance + balanceDiff,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", targetLedger.id);
+        if (ledgerError) throw new Error(ledgerError.message);
+
+        // Refresh state
+        const userId = get().currentUser?.id;
+        if (userId) {
+          await get().loadUserData(userId);
+        }
+        return;
+      }
+
+      // Offline implementation
+      const existingTxs = loadStored<Transaction[]>("khata_txs", []);
+      const updatedTxs = existingTxs.map((t) =>
+        t.id === id ? { ...t, type, amount, description: description.trim() } : t
+      );
+      persist("khata_txs", updatedTxs);
+
+      const existingLedgers = loadStored<Ledger[]>("khata_ledgers", []);
+      const updatedLedgers = existingLedgers.map((l) =>
+        l.id === targetLedger.id ? { ...l, balance: l.balance + balanceDiff, updatedAt: new Date().toISOString() } : l
+      );
+      persist("khata_ledgers", updatedLedgers);
+
+      set({
+        transactions: get().transactions.map((t) =>
+          t.id === id ? { ...t, type, amount, description: description.trim() } : t
+        ),
+        ledgers: get().ledgers.map((l) =>
+          l.id === targetLedger.id ? { ...l, balance: l.balance + balanceDiff, updatedAt: new Date().toISOString() } : l
+        ),
+      });
     },
 
     ensureFriendLedger: async (friendId: string): Promise<string | null> => {

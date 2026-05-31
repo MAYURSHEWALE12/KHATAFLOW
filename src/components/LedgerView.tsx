@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useKhataStore, type Transaction, type Friend } from "../store/useKhataStore";
 import { 
-  ArrowLeft, Plus, FileText, Send, Share2, 
+  ArrowLeft, Plus, FileText, Send, Share2, Pencil,
   Trash2, Sparkles, Check, X, ShieldAlert, TrendingUp, Sun, Moon, Search
 } from "lucide-react";
 
@@ -11,7 +11,7 @@ export default function LedgerView() {
   const navigate = useNavigate();
   const { 
     currentUser, friends, ledgers, transactions, 
-    addTransaction, deleteTransaction, settleUp, theme, toggleTheme 
+    addTransaction, deleteTransaction, editTransaction, settleUp, theme, toggleTheme 
   } = useKhataStore();
 
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
@@ -23,6 +23,49 @@ export default function LedgerView() {
   const [txDescription, setTxDescription] = useState("");
   const [txType, setTxType] = useState<Transaction["type"]>("credit_given");
   const [txError, setTxError] = useState("");
+
+  // Edit Transaction Form
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editType, setEditType] = useState<Transaction["type"]>("credit_given");
+  const [editError, setEditError] = useState("");
+
+  const handleEditClick = (tx: Transaction) => {
+    setEditingTxId(tx.id);
+    setEditAmount(tx.amount.toString());
+    setEditDescription(tx.description);
+    setEditType(tx.type);
+    setEditError("");
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError("");
+
+    const parsedAmount = parseFloat(editAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setEditError("Please enter a valid amount greater than zero.");
+      return;
+    }
+
+    if (!editDescription) {
+      setEditError("Please enter a short description.");
+      return;
+    }
+
+    if (editingTxId) {
+      try {
+        await editTransaction(editingTxId, editType, parsedAmount, editDescription);
+        setIsEditOpen(false);
+        setEditingTxId(null);
+      } catch (err) {
+        setEditError(err instanceof Error ? err.message : "Failed to edit entry");
+      }
+    }
+  };
 
   if (!currentUser) return null;
 
@@ -496,6 +539,16 @@ export default function LedgerView() {
                               Recorded by {isCreatorMe ? "You" : activeFriend.name}
                             </span>
 
+                             {isCreatorMe && (
+                              <button
+                                onClick={() => handleEditClick(tx)}
+                                className="absolute -top-2.5 -right-9 w-6 h-6 rounded-full bg-[#10B981]/15 hover:bg-[#10B981] border border-[#10B981]/30 hover:border-transparent text-[#10B981] hover:text-[#0A0A0B] flex items-center justify-center cursor-pointer transition-all opacity-0 group-hover:opacity-100 shrink-0 print:hidden"
+                                title="Edit entry"
+                              >
+                                <Pencil size={10} />
+                              </button>
+                            )}
+
                             <button
                               onClick={() => {
                                 if (confirm("Are you sure you want to delete this entry? Balance will automatically recalculate.")) {
@@ -695,6 +748,140 @@ export default function LedgerView() {
                   className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all"
                 >
                   Record Entry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Modal: Edit Transaction */}
+      {isEditOpen && (
+        <div className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-sm z-50 flex items-center justify-center px-4 print:hidden animate-slide-in">
+          <div className="w-full max-w-md bg-sidebar border border-border-color rounded-[4px] p-6 shadow-2xl relative text-left">
+            <button 
+              onClick={() => {
+                setIsEditOpen(false);
+                setEditingTxId(null);
+              }}
+              className="absolute top-4 right-4 w-8 h-8 rounded-[4px] hover:bg-card-bg flex items-center justify-center text-secondary-text cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-5">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-1.5">
+                <Pencil size={18} className="text-[#10B981]" /> Edit Ledger Entry
+              </h3>
+              <p className="text-xs text-secondary-text mt-1 font-medium">Modify transaction details and instantly recalculate net ledger balance.</p>
+            </div>
+
+            {editError && (
+              <div className="mb-4 flex items-center gap-2 p-3 rounded-[4px] bg-error-text/10 border border-error-text/20 text-error-text text-xs">
+                <ShieldAlert size={16} />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              
+              {/* Type Selectors */}
+              <div>
+                <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Entry Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditType("credit_given")}
+                    className={`py-2.5 px-3 rounded-[4px] border text-xs font-bold transition-all cursor-pointer ${
+                      editType === "credit_given"
+                        ? "bg-[#10B981]/10 border-[#10B981] text-[#10B981]"
+                        : "bg-background border-border-color text-secondary-text hover:bg-card-bg"
+                    }`}
+                  >
+                    Gave Credit (Lent)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditType("payment_received")}
+                    className={`py-2.5 px-3 rounded-[4px] border text-xs font-bold transition-all cursor-pointer ${
+                      editType === "payment_received"
+                        ? "bg-[#10B981]/10 border-[#10B981] text-[#10B981]"
+                        : "bg-background border-border-color text-secondary-text hover:bg-card-bg"
+                    }`}
+                  >
+                    Received Repay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditType("expense")}
+                    className={`py-2.5 px-3 rounded-[4px] border text-xs font-bold transition-all cursor-pointer ${
+                      editType === "expense"
+                        ? "bg-[#10B981]/10 border-[#10B981] text-[#10B981]"
+                        : "bg-background border-border-color text-secondary-text hover:bg-card-bg"
+                    }`}
+                  >
+                    Shared Expense
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditType("adjustment")}
+                    className={`py-2.5 px-3 rounded-[4px] border text-xs font-bold transition-all cursor-pointer ${
+                      editType === "adjustment"
+                        ? "bg-[#10B981]/10 border-[#10B981] text-[#10B981]"
+                        : "bg-background border-border-color text-secondary-text hover:bg-card-bg"
+                    }`}
+                  >
+                    Adjustment
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div>
+                <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Amount (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-secondary-text text-sm">₹</span>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="0.00"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-full bg-background border border-border-color rounded-[4px] py-3 pl-8 pr-4 text-xs text-foreground placeholder-secondary-text/45 focus:outline-none focus:border-[#10B981] transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Description Input */}
+              <div>
+                <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Chai and snacks, Google Pay, Dinner..."
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full bg-background border border-border-color rounded-[4px] py-3 px-4 text-xs text-foreground placeholder-secondary-text/45 focus:outline-none focus:border-[#10B981] transition-all"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingTxId(null);
+                  }}
+                  className="px-4 py-2.5 rounded-[4px] border border-border-color hover:bg-card-bg text-xs font-semibold cursor-pointer text-secondary-text transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0B] px-4 py-2.5 rounded-[4px] text-xs font-extrabold cursor-pointer transition-all"
+                >
+                  Save Entry
                 </button>
               </div>
             </form>
