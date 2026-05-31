@@ -26,9 +26,11 @@ export default function App() {
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user && !loadedRef.current) {
-          loadedRef.current = true;
-          await loadUserData(session.user.id);
+        if (session?.user) {
+          if (!loadedRef.current && !useKhataStore.getState().currentUser) {
+            loadedRef.current = true;
+            await loadUserData(session.user.id);
+          }
           setInitializing(false);
         } else if (event === "SIGNED_OUT") {
           loadedRef.current = false;
