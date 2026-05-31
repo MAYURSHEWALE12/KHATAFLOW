@@ -15,10 +15,12 @@ export default function App() {
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session?.user) {
-          setInitializing(false);
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session?.user && !loadedRef.current) {
+          loadedRef.current = true;
+          await loadUserData(session.user.id);
         }
+        setInitializing(false);
       }).catch(() => {
         setInitializing(false);
       });
@@ -28,7 +30,7 @@ export default function App() {
           loadedRef.current = true;
           await loadUserData(session.user.id);
           setInitializing(false);
-        } else if (event === "SIGNED_OUT" || !session?.user) {
+        } else if (event === "SIGNED_OUT") {
           loadedRef.current = false;
           await logout();
           setInitializing(false);
