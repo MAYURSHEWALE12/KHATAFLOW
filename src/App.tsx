@@ -32,6 +32,9 @@ export default function App() {
             await loadUserData(session.user.id);
           }
           setInitializing(false);
+        } else {
+          loadedRef.current = false;
+          setInitializing(false);
         }
       });
 
