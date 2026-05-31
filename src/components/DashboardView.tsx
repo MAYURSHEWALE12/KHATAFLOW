@@ -165,8 +165,8 @@ export default function DashboardView() {
 
           {/* Logout Button */}
           <button 
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await logout();
               navigate("/");
             }}
             className="w-10 h-10 rounded-[4px] border border-[#26272B] hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 hover:text-[#EF4444] text-[#A1A1AA] flex items-center justify-center cursor-pointer transition-all"
