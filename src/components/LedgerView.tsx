@@ -32,6 +32,24 @@ export default function LedgerView() {
   const [editType, setEditType] = useState<Transaction["type"]>("credit_given");
   const [editError, setEditError] = useState("");
 
+  // WhatsApp Custom Message States
+  const [customNote, setCustomNote] = useState("");
+
+  useEffect(() => {
+    if (isShareReminderOpen && currentUser && ledgers) {
+      const activeLedger = ledgers.find((l) => l.id === ledgerId);
+      if (activeLedger) {
+        const bal = activeLedger.balance;
+        const displayBal = activeLedger.userA === currentUser.id ? bal : -bal;
+        setCustomNote(
+          displayBal > 0
+            ? "Please settle when convenient."
+            : "Let me know how you'd like me to settle it!"
+        );
+      }
+    }
+  }, [isShareReminderOpen, ledgerId, ledgers, currentUser]);
+
   const handleEditClick = (tx: Transaction) => {
     setEditingTxId(tx.id);
     setEditAmount(tx.amount.toString());
@@ -192,10 +210,10 @@ export default function LedgerView() {
 
   // Generate WhatsApp Reminder Link
   const getWhatsAppReminderLink = () => {
-    const formattedAmt = Math.abs(balance).toLocaleString();
-    const text = balance > 0
-      ? `Hi ${activeFriend.name},\n\nYou currently owe ₹${formattedAmt}. Please settle when convenient.\n\nRegards,\n${currentUser.name}`
-      : `Hi ${activeFriend.name},\n\nI currently owe you ₹${formattedAmt}. Let me know how you'd like me to settle it!\n\nRegards,\n${currentUser.name}`;
+    const formattedAmt = Math.abs(displayBalance).toLocaleString();
+    const text = displayBalance > 0
+      ? `Hi ${activeFriend.name},\n\nYou currently owe ₹${formattedAmt}. ${customNote.trim()}\n\nRegards,\n${currentUser.name}`
+      : `Hi ${activeFriend.name},\n\nI currently owe you ₹${formattedAmt}. ${customNote.trim()}\n\nRegards,\n${currentUser.name}`;
     
     const cleanPhone = activeFriend.phone ? activeFriend.phone.replace(/[^0-9]/g, "") : "";
     if (cleanPhone) {
@@ -954,30 +972,47 @@ export default function LedgerView() {
               <h3 className="text-lg font-bold text-foreground flex items-center gap-1.5">
                 <Share2 size={18} className="text-[#10B981]" /> WhatsApp Reminder
               </h3>
-              <p className="text-xs text-secondary-text mt-1 font-medium">Send a friendly, professional settlement request with one click.</p>
+              <p className="text-xs text-secondary-text mt-1 font-medium">Send a friendly, professional settlement request with secure ledger balances.</p>
             </div>
 
-            {/* Template preview */}
-            <div className="p-4 rounded-[4px] border border-border-color bg-background text-xs text-secondary-text font-mono leading-relaxed space-y-1.5">
-              <p className="text-[#10B981] font-bold text-[9px] uppercase tracking-wider mb-2">Message Preview:</p>
-              {balance > 0 ? (
-                <>
-                  <p>Hi {activeFriend.name},</p>
-                  <p>You currently owe ₹{Math.abs(balance).toLocaleString()}. Please settle when convenient.</p>
-                  <p>Regards,</p>
-                  <p>{currentUser.name}</p>
-                </>
+            {/* Secure Locked Amount Indicator Card */}
+            <div className="p-4 rounded-[4px] border border-border-color bg-background mb-4">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block">Verified Ledger Balance</span>
+              <h2 className={`text-2xl font-black mt-1 font-mono ${displayBalance > 0 ? "text-[#10B981]" : "text-error-text"}`}>
+                ₹{Math.abs(displayBalance).toLocaleString()}
+              </h2>
+              <p className="text-[9px] text-secondary-text mt-1 font-medium italic">
+                🔒 This verified ledger amount is secure and cannot be edited.
+              </p>
+            </div>
+
+            {/* Editable Custom Message Note Field */}
+            <div className="mb-4">
+              <label className="block text-[10px] font-semibold text-secondary-text uppercase tracking-wider mb-2">Message Description</label>
+              <textarea
+                rows={3}
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                className="w-full bg-background border border-border-color rounded-[4px] py-2.5 px-3 text-xs text-foreground placeholder-secondary-text/45 focus:outline-none focus:border-[#10B981] transition-all resize-none leading-relaxed"
+                placeholder="Type custom note..."
+                required
+              />
+            </div>
+
+            {/* Live Message Preview */}
+            <div className="p-4 rounded-[4px] border border-[#10B981]/15 bg-[#10B981]/5 text-xs text-secondary-text font-mono leading-relaxed space-y-1 mb-4">
+              <p className="text-[#10B981] font-bold text-[8px] uppercase tracking-wider mb-2">Sent Link Preview:</p>
+              <p>Hi {activeFriend.name},</p>
+              {displayBalance > 0 ? (
+                <p>You currently owe <span className="font-bold text-foreground">₹{Math.abs(displayBalance).toLocaleString()}</span>. {customNote}</p>
               ) : (
-                <>
-                  <p>Hi {activeFriend.name},</p>
-                  <p>I currently owe you ₹{Math.abs(balance).toLocaleString()}. Let me know how you'd like me to settle it!</p>
-                  <p>Regards,</p>
-                  <p>{currentUser.name}</p>
-                </>
+                <p>I currently owe you <span className="font-bold text-foreground">₹{Math.abs(displayBalance).toLocaleString()}</span>. {customNote}</p>
               )}
+              <p>Regards,</p>
+              <p>{currentUser.name}</p>
             </div>
 
-            <div className="pt-5 flex items-center justify-end gap-3">
+            <div className="pt-2 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setIsShareReminderOpen(false)}
